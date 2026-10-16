@@ -1,8 +1,8 @@
-export default async function handler(request, response) {
+module.exports = async function handler(request, response) {
   const repository = process.env.GITHUB_REPOSITORY;
   if (!repository || !/^[^/]+\/[^/]+$/.test(repository)) {
     return response.status(503).json({ error: "Set GITHUB_REPOSITORY to owner/repository in Vercel." });
-  }
+  };
   const release = await fetch(`https://api.github.com/repos/${repository}/releases/latest`, {
     headers: { accept: "application/vnd.github+json", "user-agent": "itsd-update-proxy" },
   });
