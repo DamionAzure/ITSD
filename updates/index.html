@@ -20,7 +20,7 @@
     .lead { max-width:640px; color:var(--dim); font-size:17px; line-height:1.65; }
     .actions { display:flex; flex-wrap:wrap; gap:10px; margin:28px 0 46px; }
     .button { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border:1px solid var(--edge); border-radius:8px; background:var(--card); text-decoration:none; font-weight:600; }
-    .button.primary { background:var(--blue); border-color:var(--blue); color:#06111c; }.button:hover{border-color:var(--blue)}
+    .button.primary { background:var(--blue); border-color:var(--blue); color:#06111c; }.button.primary.disabled { opacity:.55; pointer-events:none; }.button:hover{border-color:var(--blue)}
     .workspace { display:grid; grid-template-columns:1.15fr .85fr; gap:18px; }
     .panel { padding:22px; border:1px solid var(--edge); border-radius:10px; background:#1b1c20; }
     h2 { margin:0 0 14px; font-size:18px; }.muted{color:var(--dim)}.release-date{color:var(--dim);font-size:12px;margin-bottom:18px}
@@ -36,7 +36,7 @@
       <div class="eyebrow">Interactive Tauri Slide Decks</div>
       <h1>Present ideas that respond.</h1>
       <p class="lead">Download the latest ITSD editor for your platform. Your decks stay as plain files, presentations work offline, and signed updates arrive without making you hunt for an installer.</p>
-      <div class="actions"><a class="button primary" href="#download">Download latest</a><a class="button" href="https://github.com/" id="source-link">View source and releases</a></div>
+      <div class="actions"><a class="button primary disabled" href="#download" id="download-button" aria-disabled="true">Find my download</a><a class="button" href="https://github.com/DamionAzure/ITSD" id="source-link">View source and releases ↗</a></div>
       <div class="workspace">
         <section class="panel" id="download"><h2>Latest release <span id="version"></span></h2><div class="release-date" id="date">Reading release information…</div><ul id="notes"><li>Loading release notes…</li></ul></section>
         <section class="panel"><h2>Install ITSD</h2><div class="platforms" id="platforms"><p class="muted">Loading installers…</p></div></section>
@@ -46,7 +46,7 @@
   </div>
   <script>
     const labels = { "windows-x86_64":["Windows","64-bit installer"], "darwin-aarch64":["macOS","Apple Silicon"], "darwin-x86_64":["macOS","Intel"], "linux-x86_64":["Linux","AppImage"] };
-    const ua = navigator.userAgent.toLowerCase(), family = ua.includes("win") ? "windows" : ua.includes("mac") ? "darwin" : "linux";
+    const ua = navigator.userAgent.toLowerCase(), family = ua.includes("win") ? "windows" : ua.includes("mac") || ua.includes("iphone") || ua.includes("ipad") ? "darwin" : "linux";
     const recommended = family === "darwin" ? (/arm64|aarch64/.test(ua) ? "darwin-aarch64" : "darwin-x86_64") : family === "windows" ? "windows-x86_64" : "linux-x86_64";
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
     fetch("/api/latest").then((r) => r.ok ? r.json() : Promise.reject()).then((m) => {
@@ -54,8 +54,15 @@
       document.querySelector("#top-version").textContent = version; document.querySelector("#version").textContent = version;
       const date = new Date(m.pub_date); if (!Number.isNaN(date.valueOf())) document.querySelector("#date").textContent = `Released ${date.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"})}`;
       document.querySelector("#notes").innerHTML = (m.notes || "Maintenance and improvements").split("\n").filter(Boolean).map((n) => `<li>${esc(n)}</li>`).join("");
+      const selected = m.platforms?.[recommended], download = document.querySelector("#download-button");
+      if (selected?.url) {
+        download.href = selected.url; download.textContent = `Download ITSD for ${labels[recommended][0]}`; download.classList.remove("disabled"); download.removeAttribute("aria-disabled");
+        download.setAttribute("download", "");
+      } else {
+        download.href = "#download"; download.textContent = "Choose a download below"; download.classList.remove("disabled"); download.removeAttribute("aria-disabled");
+      }
       const grid = document.querySelector("#platforms"); grid.innerHTML = "";
-      Object.entries(labels).forEach(([key, label]) => { const p = m.platforms?.[key]; if (!p?.url) return; const a = document.createElement("a"); a.className = "platform"; a.href = p.url; a.innerHTML = `<span><b>${label[0]}</b><small>${label[1]}${key === recommended ? " · Recommended" : ""}</small></span><span>Download ↗</span>`; grid.appendChild(a); });
+      Object.entries(labels).forEach(([key, label]) => { const p = m.platforms?.[key]; if (!p?.url) return; const a = document.createElement("a"); a.className = "platform"; a.href = p.url; a.setAttribute("download", ""); a.innerHTML = `<span><b>${label[0]}</b><small>${label[1]}${key === recommended ? " · Recommended for this device" : ""}</small></span><span>Download ↗</span>`; grid.appendChild(a); });
       if (!grid.children.length) grid.innerHTML = "<p class=\"muted\">Installers are not available yet.</p>";
     }).catch(() => { document.querySelector("#top-version").textContent = "Release unavailable"; document.querySelector("#version").textContent = "unavailable"; document.querySelector("#date").textContent = "The release service is not configured yet."; document.querySelector("#notes").innerHTML = "<li>Publish a signed GitHub Release to make installers appear here.</li>"; document.querySelector("#platforms").innerHTML = "<p class=\"muted\">No release manifest found.</p>"; });
   </script>
