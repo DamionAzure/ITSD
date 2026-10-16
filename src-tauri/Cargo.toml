@@ -15,7 +15,7 @@ tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-http = "2"
 tauri-plugin-process = "2.4.0"
-tauri-plugin-updater = "2.14.0"
+tauri-plugin-updater = { version = "2.14.0", default-features = false, features = ["rustls-tls", "system-proxy"] }
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["process", "io-util", "time", "rt", "macros"] }
 tempfile = "3"
