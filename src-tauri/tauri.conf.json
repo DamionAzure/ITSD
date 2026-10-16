@@ -59,9 +59,9 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "REPLACE_WITH_TAURI_SIGNING_PUBLIC_KEY",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc3RDJBOUMwRTMxQzAxMTEKUldRUkFSemp3S25TZHgyQ1dUQ0ViRGVKTFNHSWJPbVNHQTk2eUpWQjV2UWNOZ1ZFaXVzd2tXaWcK",
       "endpoints": [
-        "https://your-itsd-updates.vercel.app/api/latest"
+        "https://itsd-updates-gamma.vercel.app/api/latest"
       ],
       "windows": {
         "installMode": "passive"
