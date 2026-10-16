@@ -1,0 +1,43 @@
+---
+title: Quiz
+transition: fade
+---
+
+# Quick quiz
+
+::: var score default=0
+
+Score: {{score}}
+
+::: button "Start"
+put score 0
+goto 2
+:::
+
+---
+
+## Question 1: what is 6 x 7?
+
+::: button "42"
+add score 1
+play success
+goto 3
+:::
+
+::: button "48"
+play error
+goto 3
+:::
+
+---
+
+## Result
+
+You scored {{score}}.
+
+<!-- if: score >= 1 -->
+Nice work.
+
+::: button "Again"
+goto 1
+:::

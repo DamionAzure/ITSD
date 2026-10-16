@@ -1,0 +1,39 @@
+---
+title: Timers
+transition: fade
+---
+
+# Countdown
+
+::: var time default=5
+
+Time left: {{time}}
+
+::: after 0s
+put time = 5
+:::
+
+::: every 1s
+sub time 1
+:::
+
+::: when time <= 0
+cancel
+goto 2
+:::
+
+---
+
+# Reveal after a pause
+
+Think about it...
+
+::: after 3s
+goto 3
+:::
+
+---
+
+# The answer
+
+42

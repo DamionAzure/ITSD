@@ -1,0 +1,27 @@
+---
+title: How sorting works
+transition: fade
+---
+
+# Bubble sort
+
+Run the code. A trace slide appears as a branch (1-1); press Show trace, or Ctrl+Right while presenting.
+
+```python run id=sort
+a = [5, 2, 4, 1, 3]
+import json
+def show(op, hl=()):
+    print("@itsd " + json.dumps({"op": op, "a": a[:], "hl": list(hl)}))
+show("start")
+for i in range(len(a)):
+    for j in range(len(a) - 1 - i):
+        show("compare", (j, j + 1))
+        if a[j] > a[j + 1]:
+            a[j], a[j + 1] = a[j + 1], a[j]
+            show("swap", (j, j + 1))
+show("done")
+```
+
+---
+
+# Next idea

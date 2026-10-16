@@ -1,0 +1,49 @@
+---
+title: Logic
+transition: fade
+---
+
+# Dice duel
+
+::: var you default=0
+::: var them default=0
+::: var roll default=0
+::: var ready default=false
+
+You {{you}} | Them {{them}} | Last roll {{roll}}
+
+::: button "Roll (or press R)"
+put roll = random(6)
+add you roll
+put them = random(6) + them
+:::
+
+::: key r
+put roll = random(6)
+add you roll
+put them = random(6) + them
+:::
+
+<!-- if: you >= 15 and you > them -->
+## You win!
+
+<!-- if: them >= 15 and them >= you -->
+## They win!
+
+::: button "Play again"
+reset
+:::
+
+::: when you >= 15
+goto 2
+:::
+
+---
+
+# Game over
+
+Final: you {{you}}, them {{them}}.
+
+::: button "Back"
+goto 1
+:::

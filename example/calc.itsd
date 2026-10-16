@@ -1,0 +1,35 @@
+---
+title: Calculations and rules
+transition: fade
+---
+
+# A tiny quiz counter
+
+::: var score default=0
+::: var bonus default=2
+
+Score: {{score}} | Doubled: {{score * 2}} | Rank: {{ if(score >= 6, "gold", "keep going") }}
+
+::: button "+1"
+add score 1
+:::
+
+::: button "+bonus"
+add score bonus * 2
+:::
+
+::: button "Reset"
+put score 0
+:::
+
+Reach 8 points and the deck moves on by itself.
+
+::: when score >= 8
+goto 2
+:::
+
+---
+
+# You made it
+
+Final score: {{score}}

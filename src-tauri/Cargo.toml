@@ -1,0 +1,20 @@
+[package]
+name = "itsd"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "itsd_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-http = "2"
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["process", "io-util", "time", "rt", "macros"] }
+tempfile = "3"
+fontdb = "0.23"

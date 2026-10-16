@@ -1,0 +1,45 @@
+/* Sized in --u (1% of the slide's width) like the rest of the slide, so the board scales with the window. */
+.sb { --row: calc(var(--u) * 5.8); width: 100%; margin-bottom: calc(var(--u) * 1.2); text-align: left; font-family: var(--sans, system-ui, sans-serif); line-height: 1.2; }
+.sb-split { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: calc(var(--u) * 2.4); align-items: start; }
+.sb-split .sb { --row: calc(var(--u) * 5); }
+.sb-video { background: #000; border-radius: calc(var(--u) * .8); overflow: hidden; aspect-ratio: 16 / 9; display: grid; place-items: center; }
+.sb-video video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.sb-video .sb-empty { padding: 0 calc(var(--u) * 2); }
+
+.sb-main { background: var(--code); border: 1px solid var(--line); border-radius: calc(var(--u) * 1); padding: calc(var(--u) * 1.6) calc(var(--u) * 1.8); }
+.sb-head { display: flex; align-items: baseline; justify-content: space-between; gap: calc(var(--u) * 1); margin-bottom: calc(var(--u) * 1.2); }
+.sb-head h3 { margin: 0; font-size: calc(var(--u) * 2.4); font-weight: 700; letter-spacing: -.01em; }
+.sb-clock { font: 600 calc(var(--u) * 2.2) var(--mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; color: var(--accent); }
+
+.sb-rows { position: relative; list-style: none; margin: 0; padding: 0; height: calc(var(--row) * var(--n)); }
+.sb-rows li {
+  position: absolute; left: 0; right: 0; top: 0; height: calc(var(--row) - var(--u) * .5);
+  display: flex; align-items: center; gap: calc(var(--u) * 1.4); padding: 0 calc(var(--u) * 1.5);
+  background: var(--panel); border: 1px solid var(--line); border-radius: calc(var(--u) * .8); overflow: hidden;
+  transform: translateY(calc(var(--row) * var(--pos)));
+  transition: transform .75s cubic-bezier(.22, .9, .25, 1), border-color .3s, background-color .3s;
+}
+.sb-rows li.hot { z-index: 1; border-color: var(--accent); }
+.sb-rows li.lead .sb-rank { background: var(--accent); color: #1a1405; }
+.sb-bar { position: absolute; inset: 0 auto 0 0; width: calc(var(--fill) * 100%); background: color-mix(in srgb, var(--accent) 22%, transparent); transition: width .75s cubic-bezier(.22, .9, .25, 1); }
+.sb-rank { position: relative; flex: none; display: grid; place-items: center; width: calc(var(--u) * 3.4); height: calc(var(--u) * 3.4); border-radius: 50%; background: var(--line); font-weight: 700; font-size: calc(var(--u) * 1.8); font-variant-numeric: tabular-nums; transition: background-color .3s; }
+.sb-team { position: relative; flex: 1; min-width: 0; font-size: calc(var(--u) * 2.4); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-score { position: relative; font-size: calc(var(--u) * 3.2); font-weight: 800; font-variant-numeric: tabular-nums; animation: sb-bump .5s ease-out; }
+.sb-delta { position: relative; font: 700 calc(var(--u) * 1.9) var(--mono, ui-monospace, monospace); color: var(--ok); animation: sb-pop 2.6s ease-out forwards; }
+
+.sb-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--u) * .7); margin-top: calc(var(--u) * 1.2); font-size: calc(var(--u) * 1.5); }
+.sb-ctl button { font-size: inherit; padding: calc(var(--u) * .4) calc(var(--u) * 1.1); }
+.sb-ctl button[aria-pressed="true"] { border-color: var(--accent); }
+.sb-ctl input[type=range] { flex: 1 1 calc(var(--u) * 10); min-width: calc(var(--u) * 8); accent-color: var(--accent); }
+.sb-ctl select { font: inherit; background: var(--panel); color: var(--text); border: 1px solid #323b6b; border-radius: 6px; padding: calc(var(--u) * .3); }
+.sb-step { margin-left: auto; color: var(--dim); font-variant-numeric: tabular-nums; }
+.sb-empty { margin: 0; color: var(--dim); font-size: calc(var(--u) * 1.8); }
+.sb-warn { margin: calc(var(--u) * .8) 0 0; color: #f2b84b; font-size: calc(var(--u) * 1.4); }
+
+@keyframes sb-bump { 0% { transform: scale(1.35); color: var(--accent); } 100% { transform: none; } }
+@keyframes sb-pop { 0% { opacity: 0; transform: translateY(40%); } 12% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .sb-rows li, .sb-bar { transition: none; }
+  .sb-score, .sb-delta { animation: none; }
+  .sb-delta { opacity: 1; }
+}

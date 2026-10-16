@@ -1,0 +1,228 @@
+---
+title: Hello, ITSD
+author: You
+transition: slide
+reveal: stagger
+---
+
+# Slides that compile
+
+Every code block on these slides runs on this machine's own toolchain.
+
+- Edit the code live
+- Press Run, or Ctrl/Cmd+Enter
+- Nothing needs the network
+
+---
+
+## Python
+
+```python run
+for n in range(1, 6):
+    print(n * n)
+```
+
+---
+<!-- transition: zoom -->
+
+## C
+
+```c run
+#include <stdio.h>
+int main(void) {
+    printf("Hello from cc\n");
+    return 0;
+}
+```
+
+---
+<!-- transition: fade; reveal: none -->
+
+## Rust
+
+```rust run
+fn main() {
+    let v: Vec<u32> = (1..=5).map(|n| n * n).collect();
+    println!("{:?}", v);
+}
+```
+
+This block is a normal code block and does not run:
+
+```js
+console.log("static only");
+```
+
+---
+<!-- transition: slide -->
+
+## Insertion sort, traced
+
+```java run id=sort
+public class Main {
+    public static void main(String[] args) {
+        int[] a = {34, 2, 53, 12, 4, 6};
+        Trace.state("start", a, 1, Trace.NONE);
+        for (int i = 1; i < a.length; i++) {
+            int key = a[i], j = i - 1;
+            Trace.state("pick", a, i, key, i);
+            while (j >= 0) {
+                Trace.state("compare", a, i, key, j);
+                if (a[j] <= key) break;
+                a[j + 1] = a[j];
+                j--;
+                Trace.state("shift", a, i, key, j + 1);
+            }
+            a[j + 1] = key;
+            Trace.state("insert", a, i + 1, Trace.NONE, j + 1);
+        }
+        Trace.state("done", a, a.length, Trace.NONE);
+    }
+}
+```
+
+Press Run, then go to the next slide.
+
+---
+<!-- transition: fade -->
+
+## Alignment
+
+<!-- @left -->
+Left-aligned paragraph. Right-click any block in the Source pane and pick an alignment.
+
+<!-- @center -->
+Centred paragraph.
+
+<!-- @right -->
+Right-aligned paragraph.
+
+<!-- @justify -->
+Justified paragraph: the text spreads out so both edges are straight, which only shows once a paragraph wraps onto several lines like this one does.
+
+---
+<!-- transition: slide -->
+
+## <span style="color:#f2b84b;font-weight:800">Live</span> input
+
+::: input data "Numbers to sort" default="34, 2, 53, 12, 4, 6" run=live
+
+Sorting <span style="font-family:ui-monospace,Menlo,monospace;color:#7fd6a4">[{{data}}]</span>. Edit the box, press Enter.
+
+```java run id=live
+public class Main {
+    public static void main(String[] args) {
+        int[] a = {{{data}}};
+        Trace.state("start", a, 1, Trace.NONE);
+        for (int i = 1; i < a.length; i++) {
+            int key = a[i], j = i - 1;
+            Trace.state("pick", a, i, key, i);
+            while (j >= 0) {
+                Trace.state("compare", a, i, key, j);
+                if (a[j] <= key) break;
+                a[j + 1] = a[j];
+                j--;
+                Trace.state("shift", a, i, key, j + 1);
+            }
+            a[j + 1] = key;
+            Trace.state("insert", a, i + 1, Trace.NONE, j + 1);
+        }
+        Trace.state("done", a, a.length, Trace.NONE);
+    }
+}
+```
+
+---
+
+## Buttons swap the code
+
+```java run id=demo
+public class Main {
+    public static void main(String[] args) { System.out.println("Hello from Java"); }
+}
+```
+
+```python def=py_hello
+print("Hello from Python")
+```
+
+```java def=java_hello
+public class Main {
+    public static void main(String[] args) { System.out.println("Hello from Java"); }
+}
+```
+
+::: button "Java version"
+set demo = java_hello as java
+:::
+
+::: button "Python version, and run it"
+set demo = py_hello as python
+run demo
+:::
+
+---
+<!-- transition: zoom -->
+
+## Flash region
+
+Press Next to begin the flash.
+
+::: flash id=react size=26 mode=random time="1.5s +-0.5s" start=when-next loop
+3 #002ed1, 6 green
+2 red
+1 blue
+2 red
+:::
+
+::: button "Start"
+start react
+:::
+
+::: button "Stop"
+stop react
+:::
+
+---
+# Effects
+
+::: wrap reactbits.ElectricBorder color=#7df9ff
+**Electric** outline around any content
+:::
+
+::: fx reactbits.ShinyText text="Shiny text, shine passes over"
+
+---
+::: fx reactbits.Aurora
+# Aurora background
+
+::: wrap reactbits.StarBorder
+A star circles this card
+:::
+
+---
+## Border Glow with live code
+
+::: wrap reactbits.BorderGlow backgroundColor=#0e1222 borderRadius=16
+```python run
+for n in range(1, 4):
+    print("glow", n)
+```
+:::
+
+---
+## Flip card
+
+::: wrap reactbits.FlipCard trigger=click
+## What does this print?
+
+```python
+print(sum(range(5)))
+```
++++
+## Run it
+
+```python run
+print(sum(range(5)))
+```
+:::

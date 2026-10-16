@@ -1,0 +1,51 @@
+/* exampletrace.css: restyle the trace with your own CSS.
+ *
+ * Use it for one deck:      style: exampletrace.css          (in the deck's header, next to the .itsd file)
+ * or for every deck:        File > Settings > Trace stylesheet   (reloaded whenever you click back into the app)
+ *
+ * What you can aim at (nothing here is required; delete what you don't want):
+ *
+ *   .tp                      every trace part's outer box           .itsd-trace   the same, a name that won't clash
+ *   .tp-title  .tp-bars  .tp-counts  .tp-controls  .tp-ops  .tp-code        one rule per part
+ *   [data-part="bars"]       the same by attribute                  [data-from="sort"]   parts reading run block id=sort
+ *   [data-op="swap"]         the step now showing (on the part's box) and, on rows/chips, that row's own step
+ *   [data-step] [data-steps] [data-playing="true"]                   step number, step count, playing or not
+ *   [data-view="ring"]       a bars part's Look
+ *   .fancy                   whatever you put in a part's  class=fancy  (Inspector > Look > CSS class)
+ *
+ * inside the bars:   .bar  .bar.hot (selected)  .bar.sorted  .bar.keyed (the key)  .bar i (the column)  .bar span (its value)  [data-i] [data-v]
+ *                    the other Looks use .pt (line), .node (tree, ring), .cell (grid, stack)
+ * inside the ops:    .ops li   .ops li.cur (now)             inside the counts: .counts span  .counts b
+ * inside controls:   .ctl button  .ctl select  .ctl input[type=range]
+ * code:              .codepane  and Monaco's own classes;  .hl-line is the current line
+ *
+ * Colours also come as variables you can set on any part:  --bar --sorted --hot --keyc   and sizes follow  --u  (1% of the slide's width).
+ * Use calc(var(--u) * 2) instead of px so it scales with the slide. Your rules load after the app's, so equal specificity wins.
+ */
+
+/* A dark glass look for every box */
+.itsd-trace { border-radius: calc(var(--u) * 1.2); }
+.tp-bars, .tp-ops, .tp-code, .tp-counts, .tp-title { background: rgba(255, 255, 255, .04); padding: calc(var(--u) * .8); box-sizing: border-box; }
+
+/* Bars: a gradient column, a glowing selected bar, a gold held key */
+.tp-bars .bar i { background: linear-gradient(#5b7cff, #2b3a8c); }
+.tp-bars .bar.sorted i { background: linear-gradient(#5ee0a0, #1f7a55); }
+.tp-bars .bar.keyed i { background: linear-gradient(#ffe38a, #c99a1f); }
+.tp-bars .bar.hot i { background: #ffb347; box-shadow: 0 0 calc(var(--u) * 2) #ffb347; }
+/* a swap makes the selected bars pink instead (the step now showing is on the part's box) */
+.tp-bars[data-op="swap"] .bar.hot i { background: #ff5577; box-shadow: 0 0 calc(var(--u) * 2) #ff5577; }
+.tp-bars .bar span { font-weight: 700; }
+
+/* The operation list: colour each kind of step, and make "now" stand out */
+.ops li[data-op="compare"] { color: #9db4ff; }
+.ops li[data-op="swap"] { color: #ff8aa0; }
+.ops li[data-op="done"] { color: #7fe0b0; }
+.ops li.cur { background: rgba(255, 255, 255, .12); border-radius: calc(var(--u) * .5); font-weight: 700; }
+
+/* Counts as pills; the Controls bar a little rounder; the title when it is playing */
+.counts span { border-radius: 999px; }
+.ctl button { border-radius: 999px; }
+.tp-title[data-playing="true"] h2::after { content: "  ▶"; color: #7fe0b0; }
+
+/* One part only: give it  class=fancy  in its Inspector (or on its ::: trace-bars line) */
+.tp.fancy { outline: calc(var(--u) * .2) dashed #ffb347; outline-offset: calc(var(--u) * .5); }

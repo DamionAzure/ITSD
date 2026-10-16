@@ -1,0 +1,88 @@
+---
+title: Branches and counters
+transition: fade
+---
+
+# Main slide 1
+
+Press Right for the next slide. On slide 2, try Ctrl+Right, Ctrl+Enter and Ctrl+Space.
+
+---
+
+# Main slide 2 (the mother)
+
+Ctrl+Right opens 2-1, Ctrl+Enter opens 2-2, Ctrl+Space opens 2-3. Right goes on to slide 3 and never enters a branch.
+
+::: var points default=0
+
+Points: {{points}}
+
+::: button "+1"
+add points 1
+:::
+
+::: button "+2"
+add points 2
+:::
+
+::: button "Reset"
+put points 0
+:::
+
+---
+<!-- branch: 1 -->
+
+# 2-1: A closer look
+
+Right goes to the next slide of this branch (2-1.2), and after the last one on to slide 3. Left goes back, and from the first one returns to slide 2. The button does the same as Right.
+
+::: button "Next part"
+proceed
+:::
+
+---
+<!-- branch: 1 -->
+
+# 2-1.2: Second part of the same branch
+
+::: button "Continue to slide 3"
+proceed
+:::
+
+::: button "Back to slide 2"
+back
+:::
+
+---
+<!-- branch: 2 -->
+
+# 2-2: A different detour
+
+Points so far: {{points}}
+
+---
+<!-- branch: 3 -->
+
+# 2-3: Live scoreboard
+
+::: wrap scoreboard.Board live=true title="By hand"
+teams: Alpha, Bravo, Charlie
+:::
+
+::: button "Alpha +3"
+add Alpha 3
+:::
+
+::: button "Bravo +2"
+add Bravo 2
+:::
+
+::: button "Charlie +1"
+add Charlie 1
+:::
+
+---
+
+# Main slide 3
+
+The end of the main line.

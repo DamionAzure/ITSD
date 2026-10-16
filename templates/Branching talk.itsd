@@ -1,0 +1,31 @@
+---
+title: Branching talk
+transition: fade
+---
+
+# Main slide 1
+
+Right goes on. On slide 2, Ctrl+Right opens a side path.
+
+---
+
+# Main slide 2
+
+::: button "More detail"
+branch 1
+:::
+
+---
+<!-- branch: 1 -->
+
+# 2-1: A closer look
+
+Extra detail for the audience that asks.
+
+::: button "Back"
+back
+:::
+
+---
+
+# Main slide 3

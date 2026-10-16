@@ -1,0 +1,51 @@
+---
+title: Scoreboard demo
+transition: fade
+---
+
+# Final standings
+
+The same score log gives a plain board (this slide), an animated replay and a video-synced board.
+
+::: wrap scoreboard.Board title="Finals, Game 3" start=end
+teams: Alpha, Bravo, Charlie, Delta
+0:10 Alpha +3
+0:20 Bravo +5
+0:30 Charlie +4
+0:40 Alpha +4
+0:50 Delta =9
+1:00 Bravo +2
+:::
+
+---
+
+## Replay the game
+
+Press Play, step with the arrows, or press Next to show one update at a time.
+
+::: wrap scoreboard.Board title="Finals, Game 3" keys=true speed=2
+teams: Alpha, Bravo, Charlie, Delta
+0:10 Alpha +3
+0:20 Bravo +5
+0:30 Charlie +4
+0:40 Alpha +4
+0:50 Delta =9
+1:00 Bravo +2
+:::
+
+---
+
+## With the real game
+
+Put the recording in an `assets` folder next to this file as `game.mp4`. Pause or scrub the video and the numbers follow.
+Use `offset=` if the log's 0:00 is later in the video.
+
+::: wrap scoreboard.Board video=assets/game.mp4 offset=0
+teams: Alpha, Bravo, Charlie, Delta
+0:10 Alpha +3
+0:20 Bravo +5
+0:30 Charlie +4
+0:40 Alpha +4
+0:50 Delta =9
+1:00 Bravo +2
+:::

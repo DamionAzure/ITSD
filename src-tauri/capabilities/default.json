@@ -1,0 +1,16 @@
+{
+  "identifier": "default",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-fullscreen",
+    "dialog:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://raw.githubusercontent.com/*" },
+        { "url": "https://ui.aceternity.com/*" }
+      ]
+    }
+  ]
+}
