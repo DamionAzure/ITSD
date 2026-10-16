@@ -424,6 +424,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_http::init()) // lets the Vendor menu download from sites that don't send CORS headers
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![run_code, format_code, check_toolchains, read_deck, write_deck, launch_file, read_binary, import_asset, import_font, list_assets, list_system_fonts, read_sound, list_sounds, allow_media, import_media, workspace_init, workspace_list, workspace_stat, workspace_op, workspace_new, workspace_reveal])
         .run(tauri::generate_context!())
         .expect("error while running ITSD");

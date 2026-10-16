@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Download the latest version of ITSD, the interactive slide deck editor.">
+  <title>ITSD Updates</title>
+  <style>
+    :root { color-scheme: dark; --bg:#1e1e1e; --chrome:#1b1c20; --panel:#212226; --card:#2a2c31; --edge:#33353b; --text:#e6e8eb; --dim:#9aa0a6; --blue:#4da3ff; --gold:#f2b84b; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at 65% -10%,#26354a 0,#1e1e1e 42%); color:var(--text); font:14px "Segoe UI Variable","Segoe UI",system-ui,sans-serif; }
+    a { color:inherit; }
+    .shell { width:min(1040px,calc(100% - 32px)); margin:32px auto; border:1px solid var(--edge); border-radius:12px; overflow:hidden; background:var(--panel); box-shadow:0 24px 80px #0008; }
+    .menubar { display:flex; align-items:center; gap:14px; min-height:42px; padding:0 16px; background:var(--chrome); border-bottom:1px solid var(--edge); }
+    .brand { color:#9cdcfe; font-weight:700; letter-spacing:.04em; }
+    .crumb { color:var(--dim); }.grow{flex:1}.version{color:var(--dim);font-size:12px}
+    main { padding:clamp(28px,6vw,68px); }
+    .eyebrow { color:var(--blue); font:600 11px ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { max-width:700px; margin:12px 0 14px; font-size:clamp(36px,7vw,72px); line-height:1.02; letter-spacing:-.055em; }
+    .lead { max-width:640px; color:var(--dim); font-size:17px; line-height:1.65; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin:28px 0 46px; }
+    .button { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border:1px solid var(--edge); border-radius:8px; background:var(--card); text-decoration:none; font-weight:600; }
+    .button.primary { background:var(--blue); border-color:var(--blue); color:#06111c; }.button:hover{border-color:var(--blue)}
+    .workspace { display:grid; grid-template-columns:1.15fr .85fr; gap:18px; }
+    .panel { padding:22px; border:1px solid var(--edge); border-radius:10px; background:#1b1c20; }
+    h2 { margin:0 0 14px; font-size:18px; }.muted{color:var(--dim)}.release-date{color:var(--dim);font-size:12px;margin-bottom:18px}
+    ul { margin:0; padding-left:20px; color:var(--dim); line-height:1.8; }.platforms{display:grid;gap:8px}.platform{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border:1px solid var(--edge);border-radius:7px;background:var(--card);text-decoration:none}.platform:hover{border-color:var(--blue)}.platform small{display:block;color:var(--dim);font-weight:400}
+    footer { padding:14px 16px; border-top:1px solid var(--edge); color:var(--dim); font-size:12px; }
+    code { color:#c5e5ff; } @media(max-width:720px){.workspace{grid-template-columns:1fr}.shell{margin:12px auto}main{padding:28px 20px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="menubar"><span class="brand">ITSD</span><span class="crumb">/ Updates</span><span class="grow"></span><span class="version" id="top-version">Loading release…</span></header>
+    <main>
+      <div class="eyebrow">Interactive Tauri Slide Decks</div>
+      <h1>Present ideas that respond.</h1>
+      <p class="lead">Download the latest ITSD editor for your platform. Your decks stay as plain files, presentations work offline, and signed updates arrive without making you hunt for an installer.</p>
+      <div class="actions"><a class="button primary" href="#download">Download latest</a><a class="button" href="https://github.com/" id="source-link">View source and releases</a></div>
+      <div class="workspace">
+        <section class="panel" id="download"><h2>Latest release <span id="version"></span></h2><div class="release-date" id="date">Reading release information…</div><ul id="notes"><li>Loading release notes…</li></ul></section>
+        <section class="panel"><h2>Install ITSD</h2><div class="platforms" id="platforms"><p class="muted">Loading installers…</p></div></section>
+      </div>
+    </main>
+    <footer>ITSD updates are signature-verified by the app. The page and manifest are served by Vercel; release installers are published by GitHub.</footer>
+  </div>
+  <script>
+    const labels = { "windows-x86_64":["Windows","64-bit installer"], "darwin-aarch64":["macOS","Apple Silicon"], "darwin-x86_64":["macOS","Intel"], "linux-x86_64":["Linux","AppImage"] };
+    const ua = navigator.userAgent.toLowerCase(), family = ua.includes("win") ? "windows" : ua.includes("mac") ? "darwin" : "linux";
+    const recommended = family === "darwin" ? (/arm64|aarch64/.test(ua) ? "darwin-aarch64" : "darwin-x86_64") : family === "windows" ? "windows-x86_64" : "linux-x86_64";
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    fetch("/api/latest").then((r) => r.ok ? r.json() : Promise.reject()).then((m) => {
+      const version = `v${m.version || "unknown"}`; document.title = `ITSD ${version}`;
+      document.querySelector("#top-version").textContent = version; document.querySelector("#version").textContent = version;
+      const date = new Date(m.pub_date); if (!Number.isNaN(date.valueOf())) document.querySelector("#date").textContent = `Released ${date.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"})}`;
+      document.querySelector("#notes").innerHTML = (m.notes || "Maintenance and improvements").split("\n").filter(Boolean).map((n) => `<li>${esc(n)}</li>`).join("");
+      const grid = document.querySelector("#platforms"); grid.innerHTML = "";
+      Object.entries(labels).forEach(([key, label]) => { const p = m.platforms?.[key]; if (!p?.url) return; const a = document.createElement("a"); a.className = "platform"; a.href = p.url; a.innerHTML = `<span><b>${label[0]}</b><small>${label[1]}${key === recommended ? " · Recommended" : ""}</small></span><span>Download ↗</span>`; grid.appendChild(a); });
+      if (!grid.children.length) grid.innerHTML = "<p class=\"muted\">Installers are not available yet.</p>";
+    }).catch(() => { document.querySelector("#top-version").textContent = "Release unavailable"; document.querySelector("#version").textContent = "unavailable"; document.querySelector("#date").textContent = "The release service is not configured yet."; document.querySelector("#notes").innerHTML = "<li>Publish a signed GitHub Release to make installers appear here.</li>"; document.querySelector("#platforms").innerHTML = "<p class=\"muted\">No release manifest found.</p>"; });
+  </script>
+</body>
+</html>

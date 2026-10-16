@@ -27,6 +27,30 @@ npm run tauri dev      # run the app
 npm run tauri build    # make an installer
 ```
 
+## Updates
+
+ITSD uses Tauri's signed updater. Releases should publish the installer artifacts and
+`latest.json` to a GitHub Release. Before publishing the first release:
+
+1. Create a signing key with `npx tauri signer generate`.
+2. Keep the private key outside the repository (for example, as the
+   `TAURI_SIGNING_PRIVATE_KEY` GitHub Actions secret).
+3. Replace the updater public-key placeholder and the `OWNER/REPOSITORY` endpoint
+   in [`src-tauri/tauri.conf.json`](src-tauri/tauri.conf.json).
+4. Add the matching `TAURI_SIGNING_PRIVATE_KEY` and optional
+   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secrets to GitHub.
+5. Create a version tag such as `v0.2.0` to build and publish an update.
+
+Installed copies check for updates when they start. Users can also use
+**Help > Check for Updates…**. Updates are downloaded only after the user confirms
+and the app restarts to finish installation.
+
+The [`updates/`](updates/) folder is a separate Vercel deployment for the branded
+download page and update-manifest proxy. Deploy it as its own Vercel project,
+configure `GITHUB_REPOSITORY=owner/repository`, and replace the updater endpoint
+placeholder in `src-tauri/tauri.conf.json` with the deployed `/api/latest` URL.
+Vercel serves the manifest; GitHub Releases still stores the signed installers.
+
 To run code you also need the language's tools on your PATH: `python`, `java` (11+), `node`, `go`, `rustc`, or a C/C++ compiler (`cc`, `c++`).
 Only the languages you actually use need to be installed.
 

@@ -5,6 +5,8 @@
     "core:default",
     "core:window:allow-set-fullscreen",
     "dialog:default",
+    "process:allow-restart",
+    "updater:default",
     {
       "identifier": "http:default",
       "allow": [

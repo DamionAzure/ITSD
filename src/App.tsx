@@ -50,6 +50,7 @@ import { addAnim, objectAt, removeAnim, swapAnim } from "./animOps";
 import { TRANSITIONS, parseTransition, joinTransition } from "./transitions";
 import { EFFECTS } from "./anim";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { checkForUpdate } from "./updater";
 
 const filters = [{ name: "Interactive slide deck", extensions: ["itsd"] }];
 const STARTER = "# New deck\n\nStart typing.\n\n---\n\n# Second slide\n";
@@ -83,6 +84,7 @@ export default function App() {
   const [vendorOpen, setVendorOpen] = useState<string | null>(null);
   useSyncExternalStore(subscribeModules, modulesVersion); // menus and panels follow effects as they are downloaded
   useEffect(() => { initVendors(); }, []); // load what was downloaded in earlier sessions
+  useEffect(() => { void checkForUpdate(false); }, []);
   const [mode, setMode] = useState<Mode>("edit");
   const [listed, setListed] = useState<string[]>([]); // image files in the deck's assets folder
   const [tools, setTools] = useState<Record<string, boolean>>({});
@@ -546,7 +548,7 @@ export default function App() {
     { name: "Present", items: [
       { label: "From current slide", hint: "F5", run: () => present(true) },
       { label: "From first slide", hint: "Shift+F5", run: () => present(true, true) }] },
-    { name: "Help", items: [{ label: "Manual", hint: "F1", run: () => setManual(true) }] },
+    { name: "Help", items: [{ label: "Check for Updates…", run: () => void checkForUpdate(true) }, { label: "Manual", hint: "F1", run: () => setManual(true) }] },
   ];
 
   const name = path ? path.split(/[\\/]/).pop() : "Untitled.itsd";
