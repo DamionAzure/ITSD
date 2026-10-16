@@ -45,6 +45,14 @@ Installed copies check for updates when they start. Users can also use
 **Help > Check for Updates…**. Updates are downloaded only after the user confirms
 and the app restarts to finish installation.
 
+The release workflow must run for `latest.json` to exist. If the current GitHub
+Release was created manually, or was created before `includeUpdaterJson: true`
+was added to `.github/workflows/release.yml`, it will not contain that file.
+Push the workflow changes and create a new tag (for example `v0.2.1`); the
+workflow signs the installers and publishes `latest.json` alongside them.
+Verify that `latest.json` appears under the GitHub Release's **Assets** before
+testing the Vercel `/api/latest` endpoint.
+
 The [`updates/`](updates/) folder is a separate Vercel deployment for the branded
 download page and update-manifest proxy. Deploy it as its own Vercel project,
 configure `GITHUB_REPOSITORY=owner/repository`, and replace the updater endpoint
