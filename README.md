@@ -29,8 +29,10 @@ npm run tauri build    # make an installer
 
 ## Updates
 
-ITSD uses Tauri's signed updater. Releases should publish the installer artifacts and
-`latest.json` to a GitHub Release. Before publishing the first release:
+ITSD uses Tauri's signed updater. Releases should publish the installer artifacts,
+their `.sig` signature files, and `latest.json` to a GitHub Release. The
+`bundle.createUpdaterArtifacts` setting in `src-tauri/tauri.conf.json` is required
+for Tauri to produce the updater artifacts. Before publishing the first release:
 
 1. Create a signing key with `npx tauri signer generate`.
 2. Keep the private key outside the repository (for example, as the
@@ -50,8 +52,10 @@ Release was created manually, or was created before `includeUpdaterJson: true`
 was added to `.github/workflows/release.yml`, it will not contain that file.
 Push the workflow changes and create a new tag (for example `v0.2.1`); the
 workflow signs the installers and publishes `latest.json` alongside them.
-Verify that `latest.json` appears under the GitHub Release's **Assets** before
-testing the Vercel `/api/latest` endpoint.
+Verify that `latest.json` and matching `.sig` files appear under the GitHub
+Release's **Assets** before testing the Vercel `/api/latest` endpoint. If the
+release contains only installers and no `.sig` files, the signing secret was not
+loaded by Actions or updater artifacts were not enabled.
 
 The [`updates/`](updates/) folder is a separate Vercel deployment for the branded
 download page and update-manifest proxy. Deploy it as its own Vercel project,
