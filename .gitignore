@@ -27,5 +27,4 @@ Thumbs.db
 # React Bits components are not committed: its licence (MIT + Commons Clause) doesn't allow redistributing the components themselves.
 # Everyone gets them straight from React Bits instead: the app's Vendor menu, or `npm run module:reactbits -- add '*'`.
 src/modules/*/components/
-.github/workflows/release.yml
 updates/README.md
