@@ -331,6 +331,7 @@ Both switch off by themselves when the computer asks for reduced motion.
 | F5 / Shift+F5 | Present from this slide / from the first slide |
 | F11 | Full screen |
 | F1 | Open this manual |
+| F2 | Open the Wiki (where is everything?) |
 | Right, Page Down, Space | Next (while presenting) |
 | Left, Page Up | Back (while presenting) |
 | Esc | Leave Present |
@@ -396,6 +397,13 @@ hello red, there blue
 Content in a frame
 :::
 ````
+
+## I want the shortest answer: the Wiki
+
+Press **F2** or choose **Help > Wiki** to open the searchable in-app guide. Type
+what you want to do, such as “transition”, “font”, “save” or “branch”. Each
+result shows the menu path, shortcut and steps, and **Take me there** opens the
+relevant editor view when that action is available.
 
 Need the fine print? **`FORMAT.md`** documents every option. This manual is the friendly version.
 

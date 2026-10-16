@@ -13,7 +13,7 @@ const list = (items: Item[], close: () => void): ReactNode => items.map((it, k) 
   </button>
 ));
 
-export function MenuBar({ menus, right }: { menus: { name: string; items: Item[] }[]; right: ReactNode }) {
+export function MenuBar({ menus, right }: { menus: { name: string; items: Item[]; /** a button that does one thing instead of opening a list */ run?: () => void; on?: boolean; title?: string }[]; right: ReactNode }) {
   const [open, setOpen] = useState<number | null>(null);
   useEffect(() => {
     if (open === null) return;
@@ -26,8 +26,9 @@ export function MenuBar({ menus, right }: { menus: { name: string; items: Item[]
       <strong className="brand">ITSD</strong>
       {menus.map((m, i) => (
         <div className="menu" key={m.name} onMouseDown={(e) => e.stopPropagation()} onMouseEnter={() => open !== null && setOpen(i)}>
-          <button className={open === i ? "on" : ""} onClick={() => setOpen(open === i ? null : i)}>{m.name}</button>
-          {open === i && <div className="drop">{list(m.items, () => setOpen(null))}</div>}
+          {m.run ? <button className={m.on ? "on" : ""} title={m.title} onClick={() => { setOpen(null); m.run!(); }}>{m.name}</button>
+            : <button className={open === i ? "on" : ""} onClick={() => setOpen(open === i ? null : i)}>{m.name}</button>}
+          {!m.run && open === i && <div className="drop">{list(m.items, () => setOpen(null))}</div>}
         </div>
       ))}
       <span className="grow" />

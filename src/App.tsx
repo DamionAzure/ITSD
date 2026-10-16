@@ -41,6 +41,7 @@ import { Outline } from "./Outline";
 import { ContextBar, type Snippet } from "./ContextBar";
 import { StatusBar } from "./StatusBar";
 import { Manual } from "./Manual";
+import { Wiki } from "./Wiki";
 import { FONT_EXT, fontName, fontRefs, syncFonts } from "./fonts";
 import { FAMILIES, resolveFamily } from "./format";
 import { Icon } from "./icons";
@@ -76,6 +77,7 @@ export default function App() {
   const [pos, setPos] = useState({ ln: 1, col: 1 });
   const [presenting, setPresenting] = useState(false);
   const [manual, setManual] = useState(false);
+  const [wiki, setWiki] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [home, setHome] = useState(true); // the Home dashboard, over everything; closed when a deck is opened or a launch file arrives
   const wsInfo = useRef<WsInfo | null>(null);
@@ -427,6 +429,7 @@ export default function App() {
       else if (mod && e.shiftKey && k === "h") { e.preventDefault(); setHome((v) => !v); }
       else if (mod && k === ",") { e.preventDefault(); setSettingsOpen((v) => !v); }
       else if (mod && k === "b") { e.preventDefault(); toggle("outline"); }
+      else if (e.key === "F2" && !live.current.presenting) { e.preventDefault(); setWiki((v) => !v); }
       else if (e.key === "F1" && !live.current.presenting) { e.preventDefault(); setManual((v) => !v); }
       else if (e.key === "F11") { e.preventDefault(); toggleFs(); }
       else if (e.key === "F5") { e.preventDefault(); present(!live.current.presenting, e.shiftKey); }
@@ -490,7 +493,8 @@ export default function App() {
 
   const here = view.slides[cur];
   const srcSlide = deck.slides[Math.min(here.id, deck.slides.length - 1)];
-  const menus: { name: string; items: Item[] }[] = [
+  const menus: { name: string; items: Item[]; run?: () => void; on?: boolean; title?: string }[] = [
+    { name: "Home", items: [], run: () => setHome((v) => !v), on: home, title: "Your decks and templates (Ctrl+Shift+H)" },
     { name: "File", items: [
       { label: "New", hint: "Ctrl+N", run: newDeck }, { label: "Open…", hint: "Ctrl+O", run: openDeck }, "-",
       { label: "Home", hint: "Ctrl+Shift+H", run: () => setHome(true) }, "-",
@@ -548,8 +552,20 @@ export default function App() {
     { name: "Present", items: [
       { label: "From current slide", hint: "F5", run: () => present(true) },
       { label: "From first slide", hint: "Shift+F5", run: () => present(true, true) }] },
-    { name: "Help", items: [{ label: "Check for Updates…", run: () => void checkForUpdate(true) }, { label: "Manual", hint: "F1", run: () => setManual(true) }] },
+    { name: "Help", items: [{ label: "Wiki: where is everything?", hint: "F2", run: () => setWiki(true) }, { label: "Check for Updates…", run: () => void checkForUpdate(true) }, { label: "Manual", hint: "F1", run: () => setManual(true) }] },
   ];
+
+  const wikiActions: Record<string, (arg?: string) => void> = {
+    newDeck: () => newDeck(), openDeck: () => openDeck(), home: () => setHome(true), manual: () => setManual(true), settings: () => setSettingsOpen(true),
+    visual: () => { setHome(false); setMode("visual"); }, edit: () => { setHome(false); setMode("edit"); },
+    newSlide: () => { setHome(false); addAfter(); }, panelSlides: () => { setHome(false); toggle("outline"); }, fullscreen: () => toggleFs(),
+    transitions: () => { setHome(false); setMode("edit"); openSide("transitions"); }, animations: () => { setHome(false); setMode("edit"); openSide("animations"); },
+    beautify: () => { setHome(false); beautify("deck"); }, addFont: () => { void addFont(); }, soundFolder: () => { void pickSoundFolder(); },
+    present: () => { setHome(false); present(true); }, format: () => setHome(false),
+    vendor: (a) => setVendorOpen(a ?? SOURCES[0].id),
+    insert: (a) => { setHome(false); setMode("edit"); if (a === "next") put("<!-- @on next: rotate this 90 -> fade this 0.5 -->\n"); else insert(a as Snippet); },
+  };
+  const runWiki = (key: string) => { const [k, arg] = key.split(":"); wikiActions[k]?.(arg); };
 
   const name = path ? path.split(/[\\/]/).pop() : "Untitled.itsd";
   const count = where(view.slides, cur);
@@ -614,6 +630,7 @@ export default function App() {
       )}
     {slideMenuAt && <ContextMenu x={slideMenuAt.x} y={slideMenuAt.y} items={slideMenuAt.items} onClose={() => setSlideMenuAt(null)} />}
     {vendorOpen && <VendorDialog sourceId={vendorOpen} onClose={() => setVendorOpen(null)} />}
+      {wiki && <Wiki onClose={() => setWiki(false)} go={runWiki} can={(k) => k in wikiActions} onManual={() => { setWiki(false); setManual(true); }} />}
       {home && !presenting && <Dashboard canClose onClose={() => setHome(false)} onOpen={(p) => void openFromHome(p)} onOpenFile={() => void pickFromHome()} onSettings={() => setSettingsOpen(true)} onManual={() => setManual(true)} />}
       {manual && <Manual onClose={() => setManual(false)} />}
       {settingsOpen && <SettingsDialog sfx={sfx} onClose={() => setSettingsOpen(false)} pickFolder={pickSoundFolder} pickCss={pickTraceCss} cssNote={cssNote} onReloadCss={() => void loadTraceCss()} />}
