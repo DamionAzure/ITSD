@@ -453,18 +453,19 @@
       content: "";
       position: absolute;
       left: 8px;
-      top: 8px;
-      bottom: 50%;
+      top: var(--tl-top, 0px);
+      height: var(--tl-height, 0px);
       width: 3px;
       transform: translateX(-50%);
       background: linear-gradient(180deg,
-        var(--blue) 0%,
-        rgba(94,169,255,.5) 8%,
-        rgba(94,169,255,.22) 20%,
-        rgba(154,163,178,.18) 45%,
-        rgba(154,163,178,.14) 75%,
+        var(--blue) 0px,
+        rgba(94,169,255,.5) 14px,
+        rgba(94,169,255,.22) 42px,
+        rgba(154,163,178,.18) 63px,
+        rgba(154,163,178,.14) 50%,
         rgba(154,163,178,.08) 100%);
       border-radius: 3px;
+      transition: height .35s cubic-bezier(.4, 0, .2, 1), top .35s cubic-bezier(.4, 0, .2, 1);
     }
 
     .tl-entry {
@@ -891,6 +892,37 @@
       } else {
         toggle.hidden = true;
       }
+      positionTimelineLine();
+    }
+    function positionTimelineLine() {
+      const tl = document.querySelector("#timeline");
+      const visible = Array.from(tl.querySelectorAll(".tl-entry:not(.hidden)"));
+      if (!visible.length) {
+        tl.style.setProperty("--tl-top", "0px");
+        tl.style.setProperty("--tl-height", "0px");
+        return;
+      }
+      const tlRect = tl.getBoundingClientRect();
+      const first = visible[0].getBoundingClientRect();
+      const last = visible[visible.length - 1].getBoundingClientRect();
+      // Circle center Y: entry top + 5px (CSS top offset) + 7.5px (half of 15px circle)
+      const firstCenter = first.top - tlRect.top + 5 + 7.5;
+      const lastCenter = last.top - tlRect.top + 5 + 7.5;
+      const fullSpan = Math.max(0, lastCenter - firstCenter);
+      const top = firstCenter;
+      const height = fullSpan;
+      tl.style.setProperty("--tl-top", `${top}px`);
+      tl.style.setProperty("--tl-height", `${height}px`);
+    }
+    // Re-run when the layout might change
+    let resizeRaf = null;
+    window.addEventListener("resize", () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(positionTimelineLine);
+    });
+    // Recompute after fonts/layout settle
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(positionTimelineLine);
     }
     document.querySelector("#tl-toggle").addEventListener("click", function () {
       const hidden = document.querySelectorAll(".tl-entry.hidden");
@@ -905,6 +937,8 @@
         this.dataset.expanded = "1";
         this.textContent = "Show only the latest releases";
       }
+      // Animate the line resize after the entries show/hide
+      requestAnimationFrame(() => requestAnimationFrame(positionTimelineLine));
     });
 
     fetch(`https://api.github.com/repos/${REPO}/releases?per_page=30`, { headers: { Accept: "application/vnd.github+json" } })
