@@ -6,43 +6,726 @@
   <meta name="description" content="Download the latest version of ITSD, the interactive slide deck editor.">
   <title>ITSD Updates</title>
   <style>
-    :root { color-scheme: dark; --bg:#1e1e1e; --chrome:#1b1c20; --panel:#212226; --card:#2a2c31; --edge:#33353b; --text:#e6e8eb; --dim:#9aa0a6; --blue:#4da3ff; --gold:#f2b84b; }
+    :root {
+      color-scheme: dark;
+      --bg: #0d0f14;
+      --chrome: #14171e;
+      --panel: #181b22;
+      --card: #1d2129;
+      --card-hi: #232732;
+      --edge: #2a2f3a;
+      --edge-hi: #3a4150;
+      --text: #eef1f6;
+      --dim: #9aa3b2;
+      --dimmer: #6b7382;
+      --blue: #5ea9ff;
+      --blue-deep: #2e7de6;
+      --gold: #f4c068;
+      --green: #6ed09a;
+      --shadow: 0 30px 90px -20px rgba(0,0,0,.7), 0 8px 24px -8px rgba(0,0,0,.5);
+    }
+
     * { box-sizing: border-box; }
-    body { margin:0; min-height:100vh; background:radial-gradient(circle at 65% -10%,#26354a 0,#1e1e1e 42%); color:var(--text); font:14px "Segoe UI Variable","Segoe UI",system-ui,sans-serif; }
-    a { color:inherit; }
-    .shell { width:min(1040px,calc(100% - 32px)); margin:32px auto; border:1px solid var(--edge); border-radius:12px; overflow:hidden; background:var(--panel); box-shadow:0 24px 80px #0008; }
-    .menubar { display:flex; align-items:center; gap:14px; min-height:42px; padding:0 16px; background:var(--chrome); border-bottom:1px solid var(--edge); }
-    .brand { color:#9cdcfe; font-weight:700; letter-spacing:.04em; }
-    .crumb { color:var(--dim); }.grow{flex:1}.version{color:var(--dim);font-size:12px}
-    main { padding:clamp(28px,6vw,68px); }
-    .eyebrow { color:var(--blue); font:600 11px ui-monospace,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; }
-    h1 { max-width:700px; margin:12px 0 14px; font-size:clamp(36px,7vw,72px); line-height:1.02; letter-spacing:-.055em; }
-    .lead { max-width:640px; color:var(--dim); font-size:17px; line-height:1.65; }
-    .actions { display:flex; flex-wrap:wrap; gap:10px; margin:28px 0 46px; }
-    .button { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border:1px solid var(--edge); border-radius:8px; background:var(--card); text-decoration:none; font-weight:600; }
-    .button.primary { background:var(--blue); border-color:var(--blue); color:#06111c; }.button.primary.disabled { opacity:.55; pointer-events:none; }.button:hover{border-color:var(--blue)}
-    .workspace { display:grid; grid-template-columns:1.15fr .85fr; gap:18px; }
-    .panel { padding:22px; border:1px solid var(--edge); border-radius:10px; background:#1b1c20; }
-    h2 { margin:0 0 14px; font-size:18px; }.muted{color:var(--dim)}.release-date{color:var(--dim);font-size:12px;margin-bottom:18px}
-    ul { margin:0; padding-left:20px; color:var(--dim); line-height:1.8; }.platforms{display:grid;gap:8px}.platform{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border:1px solid var(--edge);border-radius:7px;background:var(--card);text-decoration:none}.platform:hover{border-color:var(--blue)}.platform small{display:block;color:var(--dim);font-weight:400}
-    footer { padding:14px 16px; border-top:1px solid var(--edge); color:var(--dim); font-size:12px; }
-    code { color:#c5e5ff; } @media(max-width:720px){.workspace{grid-template-columns:1fr}.shell{margin:12px auto}main{padding:28px 20px}}
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.55 "Inter", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient layered background */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(94, 169, 255, 0.18), transparent 60%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(244, 192, 104, 0.06), transparent 70%),
+        radial-gradient(ellipse 50% 40% at 0% 30%, rgba(94, 169, 255, 0.05), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 30%, transparent 80%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    a { color: inherit; }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: min(1120px, calc(100% - 32px));
+      margin: 32px auto;
+      border: 1px solid var(--edge);
+      border-radius: 16px;
+      overflow: hidden;
+      background: linear-gradient(180deg, var(--panel) 0%, #14171e 100%);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    /* Menubar */
+    .menubar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-height: 48px;
+      padding: 0 20px;
+      background: rgba(10, 12, 16, 0.6);
+      border-bottom: 1px solid var(--edge);
+      backdrop-filter: blur(12px);
+    }
+    .brand {
+      color: #8ecbff;
+      font-weight: 700;
+      letter-spacing: .06em;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand::before {
+      content: "";
+      width: 8px; height: 8px;
+      border-radius: 2px;
+      background: linear-gradient(135deg, var(--blue), var(--gold));
+      box-shadow: 0 0 12px rgba(94, 169, 255, .6);
+    }
+    .crumb { color: var(--dimmer); font-weight: 500; }
+    .grow { flex: 1; }
+    .version {
+      color: var(--dim);
+      font-size: 12px;
+      font-family: ui-monospace, "SF Mono", Consolas, monospace;
+      padding: 4px 10px;
+      border: 1px solid var(--edge);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    /* Main */
+    main { padding: clamp(36px, 6vw, 76px); position: relative; }
+
+    .eyebrow {
+      color: var(--blue);
+      font: 600 17px/1.4 ui-monospace, "SF Mono", Consolas, monospace;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      animation: fadeUp .6s ease both;
+      text-shadow: 0 0 18px rgba(94, 169, 255, .35);
+      margin-bottom: 4px;
+    }
+    .eyebrow::before {
+      content: "";
+      width: 36px; height: 2px;
+      background: linear-gradient(90deg, var(--blue), transparent);
+      border-radius: 2px;
+    }
+    .eyebrow .text {
+      font: inherit;
+      color: inherit;
+      display: inline-flex;
+      white-space: pre;
+    }
+    .eyebrow .text .ch {
+      display: inline-block;
+      min-width: .55em;
+      text-align: center;
+    }
+    .eyebrow .text .ch.decoding {
+      color: #a9cdff;
+      text-shadow: 0 0 12px rgba(94, 169, 255, .9), 0 0 24px rgba(94, 169, 255, .5);
+      animation: glitch .18s infinite;
+    }
+    @keyframes glitch {
+      0%   { transform: translate(0, 0); }
+      25%  { transform: translate(.5px, -.5px); }
+      50%  { transform: translate(-.5px, .5px); }
+      75%  { transform: translate(.5px, .5px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    h1 {
+      max-width: 820px;
+      margin: 18px 0 16px;
+      font-size: clamp(40px, 7vw, 78px);
+      line-height: 1.02;
+      letter-spacing: -.045em;
+      font-weight: 700;
+      animation: fadeUp .7s .05s ease both;
+    }
+    h1 .accent {
+      background: linear-gradient(120deg, var(--blue) 0%, #a9cdff 40%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .lead {
+      max-width: 620px;
+      color: var(--dim);
+      font-size: 17px;
+      line-height: 1.65;
+      animation: fadeUp .7s .1s ease both;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 32px 0 52px;
+      animation: fadeUp .7s .15s ease both;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 12px 20px;
+      border: 1px solid var(--edge-hi);
+      border-radius: 10px;
+      background: var(--card);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      transition: all .2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .button:hover {
+      border-color: var(--blue);
+      background: var(--card-hi);
+      transform: translateY(-1px);
+    }
+    .button.primary {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-deep) 100%);
+      border-color: transparent;
+      color: #06111c;
+      box-shadow: 0 4px 14px rgba(94, 169, 255, .35), inset 0 1px 0 rgba(255,255,255,.25);
+    }
+    .button.primary:hover {
+      box-shadow: 0 8px 24px rgba(94, 169, 255, .45), inset 0 1px 0 rgba(255,255,255,.25);
+      transform: translateY(-1px);
+    }
+    .button.primary.disabled {
+      opacity: .55;
+      pointer-events: none;
+      box-shadow: none;
+    }
+    .button svg {
+      width: 16px; height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Workspace */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 20px;
+      animation: fadeUp .7s .2s ease both;
+    }
+
+    .panel {
+      padding: 26px;
+      border: 1px solid var(--edge);
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.025), transparent 30%),
+        var(--card);
+      position: relative;
+      transition: border-color .25s ease;
+    }
+    .panel:hover { border-color: var(--edge-hi); }
+
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 650;
+      letter-spacing: -.01em;
+    }
+    .tag {
+      font: 600 11px ui-monospace, "SF Mono", Consolas, monospace;
+      color: var(--blue);
+      padding: 3px 10px;
+      border: 1px solid rgba(94, 169, 255, .3);
+      background: rgba(94, 169, 255, .08);
+      border-radius: 999px;
+      letter-spacing: .04em;
+    }
+
+    .muted { color: var(--dim); }
+    .release-date {
+      color: var(--dim);
+      font-size: 12px;
+      margin-bottom: 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .release-date::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    ul.notes {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--dim);
+      line-height: 1.7;
+    }
+    ul.notes li {
+      padding: 8px 0 8px 22px;
+      position: relative;
+      border-bottom: 1px dashed rgba(255,255,255,.04);
+    }
+    ul.notes li:last-child { border-bottom: 0; }
+    ul.notes li::before {
+      content: "";
+      position: absolute;
+      left: 4px; top: 14px;
+      width: 8px; height: 8px;
+      border-radius: 2px;
+      border: 1.5px solid var(--blue);
+      background: rgba(94, 169, 255, .15);
+    }
+    ul.notes li:hover { color: var(--text); }
+
+    .platforms {
+      display: grid;
+      gap: 10px;
+    }
+    .platform {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 14px;
+      border: 1px solid var(--edge);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.15);
+      text-decoration: none;
+      transition: all .2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .platform::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--blue), transparent);
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+    .platform:hover {
+      border-color: var(--blue);
+      background: rgba(94, 169, 255, .06);
+      transform: translateX(2px);
+    }
+    .platform:hover::before { opacity: 1; }
+    .platform b { font-weight: 600; }
+    .platform small {
+      display: block;
+      color: var(--dim);
+      font-weight: 400;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+    .platform .dl-icon {
+      color: var(--dim);
+      font-size: 13px;
+      font-weight: 500;
+      transition: color .2s ease;
+    }
+    .platform:hover .dl-icon { color: var(--blue); }
+    .platform .recommended-flag {
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--edge);
+      color: var(--dimmer);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(10, 12, 16, 0.4);
+    }
+    footer .dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--dimmer);
+      flex-shrink: 0;
+    }
+
+    code {
+      color: #a9cdff;
+      font-family: ui-monospace, "SF Mono", Consolas, monospace;
+      font-size: .92em;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(94, 169, 255, .08);
+    }
+
+    /* Timeline section */
+    .timeline-section {
+      margin-top: 64px;
+      padding-top: 48px;
+      border-top: 1px dashed rgba(255,255,255,.06);
+      animation: fadeUp .8s .3s ease both;
+    }
+    .timeline-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    .timeline-header h2 {
+      font-size: 26px;
+      letter-spacing: -.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .timeline-header h2::before {
+      content: "";
+      width: 28px; height: 2px;
+      background: linear-gradient(90deg, var(--blue), transparent);
+      border-radius: 2px;
+    }
+    .timeline-header .sub {
+      color: var(--dim);
+      font-size: 13px;
+    }
+    .timeline-header .sub a {
+      color: var(--blue);
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(94,169,255,.4);
+      padding-bottom: 1px;
+    }
+    .timeline-header .sub a:hover { border-bottom-style: solid; }
+
+    .timeline {
+      position: relative;
+      padding-left: 0;
+    }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      bottom: 50%;
+      width: 3px;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg,
+        var(--blue) 0%,
+        rgba(94,169,255,.5) 8%,
+        rgba(94,169,255,.22) 20%,
+        rgba(154,163,178,.18) 45%,
+        rgba(154,163,178,.14) 75%,
+        rgba(154,163,178,.08) 100%);
+      border-radius: 3px;
+    }
+
+    .tl-entry {
+      position: relative;
+      padding: 0 0 28px 36px;
+      transition: opacity .2s ease;
+    }
+    .tl-entry:last-child { padding-bottom: 0; }
+    .tl-entry::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 5px;
+      width: 15px;
+      height: 15px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: var(--bg);
+      border: 2px solid var(--edge-hi);
+      transition: all .25s ease;
+      z-index: 1;
+    }
+    .tl-entry:hover::before {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(94,169,255,.1);
+    }
+    .tl-entry.latest::before {
+      border-color: var(--blue);
+      background: var(--blue);
+      box-shadow: 0 0 0 4px rgba(94,169,255,.15), 0 0 14px rgba(94,169,255,.5);
+    }
+    .tl-entry.latest::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      width: 9px;
+      height: 9px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff 0%, var(--blue) 60%);
+      animation: pulse 2.4s ease-in-out infinite;
+      z-index: 2;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+      50% { opacity: .6; transform: translateX(-50%) scale(.85); }
+    }
+
+    .tl-card {
+      padding: 16px 18px;
+      border: 1px solid var(--edge);
+      border-radius: 11px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.025), transparent 50%),
+        var(--card);
+      transition: all .2s ease;
+      box-shadow: 0 0 3px rgba(94,169,255,.35);
+    }
+    .tl-entry:hover .tl-card {
+      border-color: var(--edge-hi);
+      background:
+        linear-gradient(180deg, rgba(94,169,255,.04), transparent 50%),
+        var(--card-hi);
+      box-shadow: 0 0 6px rgba(94,169,255,.5);
+    }
+    .tl-entry.latest .tl-card {
+      border-color: rgba(94,169,255,.35);
+      background:
+        linear-gradient(180deg, rgba(94,169,255,.06), transparent 50%),
+        var(--card);
+      box-shadow: 0 0 6px rgba(94,169,255,.55);
+    }
+
+    .tl-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .tl-version {
+      font: 600 14px ui-monospace, "SF Mono", Consolas, monospace;
+      color: var(--text);
+      letter-spacing: .02em;
+    }
+    .tl-entry.latest .tl-version { color: #a9cdff; }
+    .tl-badge {
+      font: 600 10px ui-monospace, Consolas, monospace;
+      padding: 2px 8px;
+      border-radius: 999px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .tl-badge.latest {
+      color: #06111c;
+      background: var(--blue);
+      box-shadow: 0 0 12px rgba(94,169,255,.4);
+    }
+    .tl-badge.pre {
+      color: var(--gold);
+      background: rgba(244,192,104,.1);
+      border: 1px solid rgba(244,192,104,.3);
+    }
+    .tl-date {
+      color: var(--dimmer);
+      font-size: 12px;
+      margin-left: auto;
+      font-family: ui-monospace, Consolas, monospace;
+    }
+    .tl-name {
+      color: var(--dim);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .tl-notes {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--dim);
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+    .tl-notes li {
+      padding: 4px 0 4px 18px;
+      position: relative;
+    }
+    .tl-notes li::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 11px;
+      width: 6px;
+      height: 6px;
+      border-radius: 1px;
+      border: 1.2px solid var(--dimmer);
+      transition: border-color .2s ease;
+    }
+    .tl-entry:hover .tl-notes li::before { border-color: var(--blue); }
+    .tl-notes li:hover { color: var(--text); }
+    .tl-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--blue);
+      text-decoration: none;
+      opacity: .8;
+      transition: opacity .2s ease;
+    }
+    .tl-link:hover { opacity: 1; }
+
+    .tl-empty {
+      padding: 32px 20px;
+      text-align: center;
+      color: var(--dim);
+      border: 1px dashed var(--edge);
+      border-radius: 12px;
+      background: rgba(0,0,0,.15);
+    }
+    .tl-empty .icon {
+      display: block;
+      font-size: 28px;
+      margin-bottom: 8px;
+      opacity: .5;
+    }
+    .tl-toggle {
+      display: block;
+      margin: 24px auto 0;
+      padding: 9px 22px;
+      border: 1px solid var(--edge-hi);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--dim);
+      font: 600 13px inherit;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+    .tl-toggle:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: rgba(94,169,255,.05);
+    }
+    .tl-entry.hidden { display: none; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 760px) {
+      .workspace { grid-template-columns: 1fr; }
+      .shell { margin: 12px auto; }
+      main { padding: 32px 22px; }
+      .actions { margin: 24px 0 36px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="shell">
-    <header class="menubar"><span class="brand">ITSD</span><span class="crumb">/ Updates</span><span class="grow"></span><span class="version" id="top-version">Loading release…</span></header>
+    <header class="menubar">
+      <span class="brand">ITSD</span>
+      <span class="crumb">/ Updates</span>
+      <span class="grow"></span>
+      <span class="version" id="top-version">Loading release…</span>
+    </header>
     <main>
-      <div class="eyebrow">Interactive Tauri Slide Decks</div>
-      <h1>Present ideas that respond.</h1>
+      <div class="eyebrow"><span class="text" id="eyebrow-text" data-text="Interactive Tauri Slide Decks">Interactive Tauri Slide Decks</span></div>
+      <h1>Present ideas that <span class="accent">respond.</span></h1>
       <p class="lead">Download the latest ITSD editor for your platform. Your decks stay as plain files, presentations work offline, and signed updates arrive without making you hunt for an installer.</p>
-      <div class="actions"><a class="button primary disabled" href="#download" id="download-button" aria-disabled="true">Find my download</a><a class="button" href="https://github.com/DamionAzure/ITSD" id="source-link">View source and releases ↗</a></div>
-      <div class="workspace">
-        <section class="panel" id="download"><h2>Latest release <span id="version"></span></h2><div class="release-date" id="date">Reading release information…</div><ul id="notes"><li>Loading release notes…</li></ul></section>
-        <section class="panel"><h2>Install ITSD</h2><div class="platforms" id="platforms"><p class="muted">Loading installers…</p></div></section>
+      <div class="actions">
+        <a class="button primary disabled" href="#download" id="download-button" aria-disabled="true">
+          <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          Find my download
+        </a>
+        <a class="button" href="https://github.com/DamionAzure/ITSD" id="source-link">
+          <svg viewBox="0 0 24 24"><path d="M14 3v4h4M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V7l-4-4z M9 13l2 2 4-4"/></svg>
+          View source and releases ↗
+        </a>
       </div>
+      <div class="workspace">
+        <section class="panel" id="download">
+          <div class="panel-head">
+            <h2>Latest release</h2>
+            <span class="tag" id="version">—</span>
+          </div>
+          <div class="release-date" id="date">Reading release information…</div>
+          <ul class="notes" id="notes"><li>Loading release notes…</li></ul>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Install ITSD</h2>
+            <span class="muted" style="font-size:12px;">Choose your platform</span>
+          </div>
+          <div class="platforms" id="platforms"><p class="muted">Loading installers…</p></div>
+        </section>
+      </div>
+
+      <section class="timeline-section">
+        <div class="timeline-header">
+          <h2>Release timeline</h2>
+          <div class="sub">Every signed release, newest first. <a href="https://github.com/DamionAzure/ITSD/releases" target="_blank" rel="noopener">View all on GitHub ↗</a></div>
+        </div>
+        <div class="timeline" id="timeline">
+          <div class="tl-empty"><span class="icon">⌛</span>Loading release history…</div>
+        </div>
+        <button class="tl-toggle" id="tl-toggle" hidden>Show older releases</button>
+      </section>
     </main>
-    <footer>ITSD updates are signature-verified by the app. The page and manifest are served by Vercel; release installers are published by GitHub.</footer>
+    <footer>
+      <span class="dot"></span>
+      ITSD updates are signature-verified by the app. The page and manifest are served by Vercel; release installers are published by GitHub.
+    </footer>
   </div>
   <script>
     const labels = { "windows-x86_64":["Windows","64-bit installer"], "darwin-aarch64":["macOS","Apple Silicon"], "darwin-x86_64":["macOS","Intel"], "linux-x86_64":["Linux","AppImage"] };
@@ -56,15 +739,190 @@
       document.querySelector("#notes").innerHTML = (m.notes || "Maintenance and improvements").split("\n").filter(Boolean).map((n) => `<li>${esc(n)}</li>`).join("");
       const selected = m.platforms?.[recommended], download = document.querySelector("#download-button");
       if (selected?.url) {
-        download.href = selected.url; download.textContent = `Download ITSD for ${labels[recommended][0]}`; download.classList.remove("disabled"); download.removeAttribute("aria-disabled");
+        download.href = selected.url; download.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg> Download ITSD for ${labels[recommended][0]}`; download.classList.remove("disabled"); download.removeAttribute("aria-disabled");
         download.setAttribute("download", "");
       } else {
-        download.href = "#download"; download.textContent = "Choose a download below"; download.classList.remove("disabled"); download.removeAttribute("aria-disabled");
+        download.href = "#download"; download.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg> Choose a download below`; download.classList.remove("disabled"); download.removeAttribute("aria-disabled");
       }
       const grid = document.querySelector("#platforms"); grid.innerHTML = "";
-      Object.entries(labels).forEach(([key, label]) => { const p = m.platforms?.[key]; if (!p?.url) return; const a = document.createElement("a"); a.className = "platform"; a.href = p.url; a.setAttribute("download", ""); a.innerHTML = `<span><b>${label[0]}</b><small>${label[1]}${key === recommended ? " · Recommended for this device" : ""}</small></span><span>Download ↗</span>`; grid.appendChild(a); });
+      Object.entries(labels).forEach(([key, label]) => { const p = m.platforms?.[key]; if (!p?.url) return; const a = document.createElement("a"); a.className = "platform"; a.href = p.url; a.setAttribute("download", ""); a.innerHTML = `<span><b>${label[0]}</b><small>${label[1]}${key === recommended ? ' · <span class="recommended-flag">Recommended for this device</span>' : ""}</small></span><span class="dl-icon">Download ↗</span>`; grid.appendChild(a); });
       if (!grid.children.length) grid.innerHTML = "<p class=\"muted\">Installers are not available yet.</p>";
     }).catch(() => { document.querySelector("#top-version").textContent = "Release unavailable"; document.querySelector("#version").textContent = "unavailable"; document.querySelector("#date").textContent = "The release service is not configured yet."; document.querySelector("#notes").innerHTML = "<li>Publish a signed GitHub Release to make installers appear here.</li>"; document.querySelector("#platforms").innerHTML = "<p class=\"muted\">No release manifest found.</p>"; });
+
+    // ---------- Eyebrow decrypting text effect ----------
+    (function () {
+      const el = document.getElementById("eyebrow-text");
+      if (!el) return;
+      const target = el.getAttribute("data-text") || el.textContent || "";
+      if (!target) return;
+      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // Build per-character spans so we can animate each one independently
+      el.innerHTML = "";
+      const chars = [];
+      for (const ch of target) {
+        const span = document.createElement("span");
+        span.className = "ch";
+        span.textContent = ch === " " ? "\u00A0" : ch;
+        el.appendChild(span);
+        chars.push(span);
+      }
+
+      if (prefersReduced) {
+        // Skip the animation entirely for reduced-motion users
+        return;
+      }
+
+      const glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#@%&*<>/\\";
+      const randGlyph = () => glyphs[Math.floor(Math.random() * glyphs.length)];
+
+      let frame = 0;
+      const revealEvery = 4;   // reveal a new real character every N frames
+      const scrambleFrames = 22; // how many frames each character scrambles before being eligible to reveal
+      const charsRevealed = new Array(chars.length).fill(0);
+
+      function tick() {
+        let allDone = true;
+        for (let i = 0; i < chars.length; i++) {
+          const span = chars[i];
+          const real = target[i];
+          if (real === " ") {
+            span.textContent = "\u00A0";
+            span.classList.remove("decoding");
+            continue;
+          }
+          // Determine how many real chars should be locked in by now
+          const shouldRevealCount = Math.floor(frame / revealEvery);
+          if (i < shouldRevealCount) {
+            // Locked in - keep showing the real char
+            if (span.textContent !== real) {
+              span.textContent = real;
+              span.classList.remove("decoding");
+            }
+          } else {
+            // Still scrambling - but only after this char's "start" frame
+            const startFrame = i * revealEvery - scrambleFrames;
+            if (frame >= startFrame) {
+              span.textContent = randGlyph();
+              span.classList.add("decoding");
+              allDone = false;
+            } else {
+              // Not started yet - show a dim placeholder glyph
+              if (!span.classList.contains("decoding")) {
+                span.textContent = "\u00B7";
+              }
+            }
+          }
+        }
+        frame++;
+        if (!allDone) {
+          requestAnimationFrame(tick);
+        } else {
+          // Final cleanup: ensure all show real text
+          for (let i = 0; i < chars.length; i++) {
+            chars[i].textContent = target[i] === " " ? "\u00A0" : target[i];
+            chars[i].classList.remove("decoding");
+          }
+        }
+      }
+      // Kick off after a short delay so the fade-up entrance can settle
+      setTimeout(tick, 350);
+    })();
+
+    // ---------- Release timeline ----------
+    const REPO = "DamionAzure/ITSD";
+    const INITIAL_VISIBLE = 5;
+    let allReleases = [];
+
+    function fmtDate(iso) {
+      const d = new Date(iso);
+      if (Number.isNaN(d.valueOf())) return "";
+      return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    }
+    function relativeTime(iso) {
+      const d = new Date(iso);
+      if (Number.isNaN(d.valueOf())) return "";
+      const diff = Date.now() - d.getTime();
+      const day = 86400000;
+      if (diff < day) return "today";
+      if (diff < 2 * day) return "yesterday";
+      if (diff < 7 * day) return `${Math.floor(diff / day)} days ago`;
+      if (diff < 30 * day) return `${Math.floor(diff / (7 * day))} weeks ago`;
+      if (diff < 365 * day) return `${Math.floor(diff / (30 * day))} months ago`;
+      return `${Math.floor(diff / (365 * day))} years ago`;
+    }
+    function renderTimeline(releases) {
+      const tl = document.querySelector("#timeline");
+      const toggle = document.querySelector("#tl-toggle");
+      if (!releases.length) {
+        tl.innerHTML = `<div class="tl-empty"><span class="icon">⊘</span>No published releases yet. Push a tag and publish a GitHub Release to start the timeline.</div>`;
+        toggle.hidden = true;
+        return;
+      }
+      tl.innerHTML = "";
+      releases.forEach((r, i) => {
+        const isLatest = i === 0;
+        const isPre = !!r.prerelease;
+        const version = esc(r.tag_name || r.name || "v?");
+        const name = r.name && r.name !== r.tag_name ? esc(r.name) : "";
+        const date = fmtDate(r.published_at || r.created_at);
+        const rel = relativeTime(r.published_at || r.created_at);
+        const body = (r.body || "Maintenance and improvements.").split("\n").map((l) => l.trim()).filter((l) => l && !/^#{1,6}\s/.test(l) && !/^\s*[-*]\s*$/.test(l)).slice(0, 12);
+        const notesHtml = body.map((n) => `<li>${esc(n.replace(/^[-*]\s+/, ""))}</li>`).join("");
+        const entry = document.createElement("div");
+        entry.className = `tl-entry${isLatest ? " latest" : ""}${i >= INITIAL_VISIBLE ? " hidden" : ""}`;
+        entry.innerHTML = `
+          <div class="tl-card">
+            <div class="tl-meta">
+              <span class="tl-version">${version}</span>
+              ${isLatest ? `<span class="tl-badge latest">Latest</span>` : ""}
+              ${isPre ? `<span class="tl-badge pre">Pre-release</span>` : ""}
+              <span class="tl-date" title="${esc(date)}">${esc(date)}${rel ? ` · ${esc(rel)}` : ""}</span>
+            </div>
+            ${name ? `<div class="tl-name">${name}</div>` : ""}
+            <ul class="tl-notes">${notesHtml || "<li>No release notes.</li>"}</ul>
+            <a class="tl-link" href="${esc(r.html_url || "#")}" target="_blank" rel="noopener">View on GitHub ↗</a>
+          </div>`;
+        tl.appendChild(entry);
+      });
+      if (releases.length > INITIAL_VISIBLE) {
+        toggle.hidden = false;
+        toggle.textContent = `Show older releases (${releases.length - INITIAL_VISIBLE} more)`;
+      } else {
+        toggle.hidden = true;
+      }
+    }
+    document.querySelector("#tl-toggle").addEventListener("click", function () {
+      const hidden = document.querySelectorAll(".tl-entry.hidden");
+      const expanded = this.dataset.expanded === "1";
+      if (expanded) {
+        document.querySelectorAll(`.tl-entry:nth-child(n+${INITIAL_VISIBLE + 1})`).forEach((el) => el.classList.add("hidden"));
+        this.dataset.expanded = "0";
+        this.textContent = `Show older releases (${allReleases.length - INITIAL_VISIBLE} more)`;
+        this.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } else {
+        hidden.forEach((el) => el.classList.remove("hidden"));
+        this.dataset.expanded = "1";
+        this.textContent = "Show only the latest releases";
+      }
+    });
+
+    fetch(`https://api.github.com/repos/${REPO}/releases?per_page=30`, { headers: { Accept: "application/vnd.github+json" } })
+      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+      .then((data) => {
+        allReleases = Array.isArray(data) ? data.filter((r) => !r.draft) : [];
+        renderTimeline(allReleases);
+      })
+      .catch((err) => {
+        const tl = document.querySelector("#timeline");
+        const msg = err === 404
+          ? `Couldn't fetch releases — the repository <code>${REPO}</code> may be private or doesn't exist yet.`
+          : err === 403
+            ? `GitHub API rate limit reached. Try again in a few minutes, or <a href="https://github.com/DamionAzure/ITSD/releases" target="_blank" rel="noopener" style="color:var(--blue)">browse releases on GitHub ↗</a>`
+            : `Couldn't load release history right now. <a href="https://github.com/DamionAzure/ITSD/releases" target="_blank" rel="noopener" style="color:var(--blue)">View on GitHub ↗</a>`;
+        tl.innerHTML = `<div class="tl-empty">${msg}</div>`;
+        document.querySelector("#tl-toggle").hidden = true;
+      });
   </script>
 </body>
 </html>
