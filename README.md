@@ -34,6 +34,10 @@ their `.sig` signature files, and `latest.json` to a GitHub Release. The
 `bundle.createUpdaterArtifacts` setting in `src-tauri/tauri.conf.json` is required
 for Tauri to produce the updater artifacts. Before publishing the first release:
 
+Installer metadata identifies **Damion Azure** as the publisher and includes
+`Copyright © 2026 Damion Azure`. These values are configured in the Tauri bundle
+metadata and are applied when the release workflow builds installers.
+
 1. Create a signing key with `npx tauri signer generate`.
 2. Keep the private key outside the repository (for example, as the
    `TAURI_SIGNING_PRIVATE_KEY` GitHub Actions secret).

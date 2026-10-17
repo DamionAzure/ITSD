@@ -30,6 +30,8 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": true,
+    "publisher": "Damion Azure",
+    "copyright": "Copyright © 2026 Damion Azure",
     "targets": "all",
     "icon": [
       "icons/32x32.png",
