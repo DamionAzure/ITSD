@@ -35,6 +35,37 @@ In Edit view, the strip on the far left toggles the Slides, Source and Canvas pa
 
 Everything you do in any view is just a change to the text, so **Ctrl+Z** undoes it, and each action is one step.
 
+### Speaker notes
+
+Speaker notes are stored in the source but never rendered on the slide:
+
+```
+::: notes
+Mention the key result before moving on.
+:::
+```
+
+Use **View > Speaker notes box** to show the Notes box beneath the slide, or
+choose **Insert > Speaker notes** to add a notes block at the cursor.
+
+### Presenter View
+
+Enable **Present > Presenter View**, then press **F5**. ITSD opens a second
+window for the presenter while the main window remains the live audience view.
+The presenter window shows the current slide, next slide, speaker notes, an
+adjustable notes size, a pausable timer, and the current clock. **Previous**,
+**Next**, the slide picker, and **End show** control the presentation. Arrow
+keys, **Space**, and **Esc** work in either window.
+
+Put the presenter window on your laptop screen and the audience window on the
+projector. The presenter window closes when the show ends.
+
+### Slide grid
+
+Turn off **Source** and **Canvas** in the left strip to expand the Slides panel
+into a grid. Drag slides to reorder them, right-click for the slide menu, and
+double-click a slide to return to the editor.
+
 ## I want to…
 
 ### …make a new slide

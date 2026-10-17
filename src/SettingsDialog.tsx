@@ -39,6 +39,9 @@ export function SettingsDialog({ sfx, onClose, pickFolder, pickCss, cssNote, onR
             <button onClick={() => void sfx.play("chime")}>Try</button></div>
 
           <h3>Trace</h3>
+          <h3>Presentation</h3>
+          <div className="srow"><label>Presenter View</label>
+            <input type="checkbox" checked={s.presenter} onChange={(e) => setSettings({ presenter: e.target.checked })} /><span className="sval">open the presenter window (notes, next slide, timer) whenever you press F5</span></div>
           <div className="srow"><label>A run that prints a trace gets</label>
             {sel("traceSlide", [["branch", "a branch slide you can edit (2-1)"], ["next", "a generated slide right after it"], ["off", "nothing (use ::: trace blocks)"]])}</div>
           <div className="srow"><label>“Show trace” button</label>

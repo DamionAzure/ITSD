@@ -1,9 +1,13 @@
 {
   "identifier": "default",
-  "windows": ["main"],
+  "windows": ["main", "presenter"],
   "permissions": [
     "core:default",
     "core:window:allow-set-fullscreen",
+    "core:window:allow-create",
+    "core:window:allow-close",
+    "core:window:allow-set-focus",
+    "core:webview:allow-create-webview-window",
     "dialog:default",
     "process:allow-restart",
     "updater:default",

@@ -4,7 +4,10 @@ import { MEDIA_EXT, VIDEO_EXT, AUDIO_EXT, isVideo } from "./mediaDef";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { parseDeck, type Deck, type Slide } from "./itsd";
 import { DeckCtx, type DeckApi, type TraceData } from "./ctx";
-import { addSlide, deleteSlide, duplicateSlide, moveSlide, setMeta, setSlideOpt } from "./edit";
+import { addSlide, deleteSlide, duplicateSlide, moveSlide, setMeta, setSlideOpt, titleOf } from "./edit";
+import { notesOf, setNotes } from "./notes";
+import { NotesBox } from "./NotesBox";
+import { openBus, openPresenter, closePresenter, type ToMain, type PState } from "./presenterBus";
 import { createSound, BUILTIN_NAMES } from "./sound";
 import { homeOf, makeTraceSlide, scanTraces } from "./traceBlock";
 import { useSettings, settings, setSettings } from "./settings";
@@ -57,9 +60,9 @@ const filters = [{ name: "Interactive slide deck", extensions: ["itsd"] }];
 const STARTER = "# New deck\n\nStart typing.\n\n---\n\n# Second slide\n";
 const isAbs = (p: string) => /^([\\/]|[A-Za-z]:[\\/])/.test(p);
 type Mode = "edit" | "visual";
-type Prefs = { outline: boolean; source: boolean; canvas: boolean; split: number };
+type Prefs = { outline: boolean; source: boolean; canvas: boolean; notes: boolean; split: number };
 const loadPrefs = (): Prefs => {
-  const d = { outline: true, source: true, canvas: true, split: 50 };
+  const d = { outline: true, source: true, canvas: true, notes: true, split: 50 };
   try { return { ...d, ...JSON.parse(localStorage.getItem("itsd.layout") ?? "{}") }; } catch { return d; }
 };
 
@@ -299,10 +302,12 @@ export default function App() {
     if (on) { triggers.newRun(); inputs.clear(); startedAt.current = Date.now(); } // a new run of the presentation: at-start regions are fresh again, variables and input boxes are back to their defaults, the clock restarts
     if (on && fromStart) setIdx(0);
     setPresenting(on);
+    if (on && settings().presenter) void openPresenter();
+    if (!on) { bus.current?.send({ t: "end" }); void closePresenter(); }
     setWindowFs(on ? true : live.current.fs); // leaving Present returns to whatever the app was before
   };
   const toggleFs = () => { const v = !live.current.fs; setFs(v); if (!live.current.presenting) setWindowFs(v); };
-  const toggle = (k: "outline" | "source" | "canvas") => setPrefs((p) => { const n = { ...p, [k]: !p[k] }; return !n.source && !n.canvas ? p : n; });
+  const toggle = (k: "outline" | "source" | "canvas") => setPrefs((p) => { const n = { ...p, [k]: !p[k] }; return !n.outline && !n.source && !n.canvas ? p : n; });
   // Slide operations rewrite the source through the editor, so Ctrl+Z undoes them. The cursor follows after the re-render.
   const land = (line: number) => setTimeout(() => editor.current?.reveal(line), 60);
   const addAfter = () => {
@@ -388,6 +393,29 @@ export default function App() {
   // Relative picture paths mean something different once the deck lives somewhere else.
   useEffect(() => { assets.clear(); sfx.clearCache(); refreshAssets(path); }, [path]);
   const h = useRef({ advance, go, enterBranch, newDeck, openDeck, saveDeck, present, toggle, toggleFs }); h.current = { advance, go, enterBranch, newDeck, openDeck, saveDeck, present, toggle, toggleFs };
+
+  const bus = useRef<ReturnType<typeof openBus<ToMain>> | null>(null);
+  const pstate = (): PState => {
+    const { view, cur, presenting, path } = live.current, lab = slideLabels(view.slides);
+    return {
+      slides: view.slides.map((s, k) => ({ src: s.src, title: s.virtual ? "Trace" : titleOf(s), label: lab[k] ?? String(k + 1), notes: s.virtual ? "" : notesOf(s.src), branch: bnum(s) > 0 })),
+      idx: cur, next: mainNext(view.slides, cur), align: view.meta.align, path, presenting, name: path ? path.split(/[\\/]/).pop()! : "Untitled.itsd",
+    };
+  };
+  useEffect(() => {
+    bus.current = openBus<ToMain>((m) => {
+      if (m.t !== "cmd") return;
+      const L = live.current, f = h.current;
+      if (m.cmd === "hello") bus.current?.send({ t: "state", s: pstate() });
+      else if (!L.presenting) return;
+      else if (m.cmd === "next") f.advance();
+      else if (m.cmd === "prev") f.go(mainPrev(L.view.slides, L.cur));
+      else if (m.cmd === "goto" && m.idx !== undefined) f.go(m.idx);
+      else if (m.cmd === "end") f.present(false);
+    });
+    return () => bus.current?.close();
+  }, []);
+  useEffect(() => { bus.current?.send({ t: "state", s: pstate() }); }, [view, cur, presenting, path]);
 
   const dragSplit = (e: React.MouseEvent) => {
     const box = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
@@ -506,7 +534,7 @@ export default function App() {
       { label: "Script", sub: [
         { label: "Event rule (on key / enter / change)", run: () => insert("on") }, { label: "Macro (reusable actions)", run: () => insert("macro") }, { label: "JavaScript block", run: () => insert("script") }] },
       { label: "Trace (separate parts)", run: () => insert("trace") }, { label: "Trace (one block)", run: () => insert("traceOne") },
-      { label: "Video…", run: () => void addMedia("video") }, { label: "Audio…", run: () => void addMedia("audio") }, { label: "Input box", run: () => insert("input") }, { label: "Hidden source", run: () => insert("source") }, "-",
+      { label: "Video…", run: () => void addMedia("video") }, { label: "Audio…", run: () => void addMedia("audio") }, { label: "Input box", run: () => insert("input") }, { label: "Speaker notes", run: () => insert("notes") }, { label: "Hidden source", run: () => insert("source") }, "-",
       { label: "Action (on Next)", run: () => put("<!-- @on next: rotate this 90 -> fade this 0.5 -->\n") },
       { label: "Flash region", sub: [
         { label: "Starts every time I arrive", run: () => insertFlash("new-slide") }, { label: "Starts the first time only", run: () => insertFlash("at-start") },
@@ -539,7 +567,12 @@ export default function App() {
       { label: "Slides panel", hint: "Ctrl+B", checked: prefs.outline, run: () => toggle("outline") },
       { label: "Source", checked: prefs.source, run: () => toggle("source") },
       { label: "Canvas", checked: prefs.canvas, run: () => toggle("canvas") }, "-",
+      { label: "Speaker notes box", checked: prefs.notes, run: () => setPrefs((p) => ({ ...p, notes: !p.notes })) }, "-",
       { label: "Full screen", hint: "F11", checked: fs, run: toggleFs }] },
+    { name: "Present", items: [
+      { label: "From current slide", hint: "F5", run: () => present(true) },
+      { label: "From first slide", hint: "Shift+F5", run: () => present(true, true) }, "-",
+      { label: "Presenter View (notes, next slide, timer)", checked: st.presenter, run: () => setSettings({ presenter: !st.presenter }) }] },
     { name: "Vendor", items: [
       ...SOURCES.map((s): Item => ({ label: `${s.name}…`, run: () => setVendorOpen(s.id) }))] },
     { name: "Sound", items: [
@@ -549,9 +582,6 @@ export default function App() {
       { label: "Volume", sub: [["Full", 1], ["70%", 0.7], ["40%", 0.4], ["Muted", 0]].map(([l, v]): Item => ({ label: l as string, checked: Math.abs(sfx.volume - (v as number)) < 0.01, run: () => sfx.setVolume(v as number) })) },
       { label: "Try a built-in sound", sub: BUILTIN_NAMES.map((n): Item => ({ label: n, run: () => void sfx.play(n) })) },
       ...(sfx.files.length ? [{ label: "Try a sound from the folder", sub: sfx.files.slice(0, 60).map((f): Item => ({ label: f, run: () => void sfx.play(f) })) } as Item] : [])] },
-    { name: "Present", items: [
-      { label: "From current slide", hint: "F5", run: () => present(true) },
-      { label: "From first slide", hint: "Shift+F5", run: () => present(true, true) }] },
     { name: "Help", items: [{ label: "Wiki: where is everything?", hint: "F2", run: () => setWiki(true) }, { label: "Check for Updates…", run: () => void checkForUpdate(true) }, { label: "Manual", hint: "F1", run: () => setManual(true) }] },
   ];
 
@@ -587,7 +617,7 @@ export default function App() {
         <div className="work">
           <nav className="strip">{stripBtn("outline", "slides", "Slides (Ctrl+B)")}{mode === "edit" && <>{stripBtn("source", "source", "Source")}{stripBtn("canvas", "canvas", "Canvas")}</>}</nav>
           {prefs.outline && (
-            <Outline deck={deck} labels={slideLabels(deck.slides)} activeId={here.id} traced={tracedIds} onSelect={(s) => editor.current?.reveal(s.line)}
+            <Outline grid={!prefs.source && !prefs.canvas} deck={deck} labels={slideLabels(deck.slides)} activeId={here.id} traced={tracedIds} onSelect={(s) => editor.current?.reveal(s.line)}
               onMove={(a, b) => editor.current?.replaceAll(moveSlide(live.current.text, a, b))}
               onAdd={addAfter} onDup={dupSlide} onDel={delSlide} onMenu={openSlideMenu} />
           )}
@@ -606,6 +636,7 @@ export default function App() {
                   <div className="nav">
                     <button onClick={() => go(cur - 1)}>Previous</button><span>{count}</span><button onClick={() => advance()}>Next</button>
                   </div>
+                  {prefs.notes && <NotesBox slideId={srcSlide.id} value={notesOf(srcSlide.src)} onCommit={(v) => commit(setNotes(live.current.text, srcSlide.id, v))} />}
                 </div>
               </div>
             </div>

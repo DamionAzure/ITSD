@@ -5,18 +5,19 @@ import type { Deck, Slide } from "./itsd";
 
 interface Props {
   deck: Deck; labels: string[]; activeId: number; traced: Record<number, unknown>;
+  grid?: boolean;
   onSelect: (s: Slide) => void; onMove: (from: number, to: number) => void;
   onAdd: () => void; onDup: (id: number) => void; onDel: (id: number) => void;
   /** Right-click on a slide (its id) or on the empty part of the panel (null). */
   onMenu?: (e: React.MouseEvent, id: number | null) => void;
 }
 
-export function Outline({ deck, labels, activeId, traced, onSelect, onMove, onAdd, onDup, onDel, onMenu }: Props) {
+export function Outline({ deck, labels, activeId, traced, grid, onSelect, onMove, onAdd, onDup, onDel, onMenu }: Props) {
   const drag = useRef<number | null>(null);
   const [over, setOver] = useState<number | null>(null);
   const act = (f: () => void) => (e: React.MouseEvent) => { e.stopPropagation(); f(); };
   return (
-    <aside className="slidepanel" onContextMenu={(e) => { if (!onMenu) return; e.preventDefault(); onMenu(e, null); }}>
+    <aside className={"slidepanel" + (grid ? " grid" : "")} onContextMenu={(e) => { if (!onMenu) return; e.preventDefault(); onMenu(e, null); }}>
       <div className="ptitle">SLIDES<span className="grow" /><button title="New slide after the current one" onClick={onAdd}>+</button></div>
       <ol>
         {deck.slides.map((s, k) => (

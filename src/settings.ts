@@ -16,8 +16,10 @@ export interface Settings {
   workspace: string;
   /** Show the Home dashboard when the app starts without a file. */
   homeAtStart: boolean;
+  /** Open the Presenter View window whenever you present. */
+  presenter: boolean;
 }
-export const DEFAULTS: Settings = { traceSlide: "branch", traceButton: true, traceCss: "", traceCssOn: true, scripts: "ask", workspace: "", homeAtStart: true };
+export const DEFAULTS: Settings = { traceSlide: "branch", traceButton: true, traceCss: "", traceCssOn: true, scripts: "ask", workspace: "", homeAtStart: true, presenter: false };
 
 const KEY = "itsd.settings";
 const load = (): Settings => { try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") }; } catch { return { ...DEFAULTS }; } };

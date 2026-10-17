@@ -85,6 +85,7 @@ export function toBlocks(src: string): Block[] {
   for (let i = 0; i < lines.length; i++) {
     const f = lines[i].match(/^\s*(`{3,}|~{3,})/);
     if (f) fence = fence ? (f[1][0] === fence ? null : fence) : f[1][0];
+    if (!fence && /^:::\s*notes\s*$/.test(lines[i])) { flush(); while (i + 1 < lines.length && !/^:::\s*$/.test(lines[i + 1])) i++; i++; continue; }
     const ifm = !fence && !f ? lines[i].match(/^\s*<!--\s*if:\s*(.+?)\s*-->\s*$/) : null;
     if (ifm) { flush(); cond = ifm[1]; continue; }
     const od = !fence && !f ? lines[i].match(ON_LINE) : null, idm = !fence && !f ? lines[i].match(ID_LINE) : null;

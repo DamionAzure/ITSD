@@ -9,6 +9,7 @@ export const SNIPPETS: Record<Snippet, string> = {
   button: '::: button "Label"\nrun example\n:::\n\n',
   input: '::: input data "Your data" default="1, 2, 3" run=example\n\nUse {{data}} in text or in code.\n\n',
   source: '```python def=my_source\nprint("Hello from a source")\n```\n\n',
+  notes: '::: notes\nWhat to say on this slide.\n:::\n\n',
   sound: '::: button "Play sound"\nplay ding\n:::\n\n',
   trace: partsLines(DEFAULT_RECT, parseTraceDef("from=example")).join("\n") + "\n\n", // separate parts, each placed
   traceOne: '::: trace from=example\n\n',
