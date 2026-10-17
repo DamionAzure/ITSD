@@ -79,6 +79,8 @@ export default function App() {
   const [idx, setIdx] = useState(0);
   const [pos, setPos] = useState({ ln: 1, col: 1 });
   const [presenting, setPresenting] = useState(false);
+  const [mobile, setMobile] = useState(false);
+  const isMobileViewport = () => window.matchMedia("(max-width: 720px), (pointer: coarse)").matches;
   const [manual, setManual] = useState(false);
   const [wiki, setWiki] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -87,6 +89,13 @@ export default function App() {
   const st = useSettings();
   const [cssNote, setCssNote] = useState("");
   const [vendorOpen, setVendorOpen] = useState<string | null>(null);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 720px), (pointer: coarse)");
+    const update = () => setMobile(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   useSyncExternalStore(subscribeModules, modulesVersion); // menus and panels follow effects as they are downloaded
   useEffect(() => { initVendors(); }, []); // load what was downloaded in earlier sessions
   useEffect(() => { void checkForUpdate(false); }, []);
@@ -245,8 +254,8 @@ export default function App() {
   const discardOk = () => !live.current.dirty || window.confirm("Discard unsaved changes?");
   const reset = () => { scriptOk.current = null; edits.current.clear(); inputs.clear(); setTraces({}); lastTrace.current = ""; setIdx(0); };
   const load = async (p: string) => { const t = await invoke<string>("read_deck", { path: p }); setText(t); setSaved(t); setPath(p); reset(); addRecent(p); };
-  const openFromHome = async (p: string) => { if (!discardOk()) return; try { await load(p); setHome(false); } catch (e) { window.alert(`Couldn't open ${p}: ${e}`); } };
-  const pickFromHome = async () => { if (!discardOk()) return; const p = await open({ filters }); if (typeof p === "string") { await load(p); setHome(false); } };
+  const openFromHome = async (p: string) => { if (!discardOk()) return; try { await load(p); setHome(false); if (isMobileViewport()) present(true, true); } catch (e) { window.alert(`Couldn't open ${p}: ${e}`); } };
+  const pickFromHome = async () => { if (!discardOk()) return; const p = await open({ filters }); if (typeof p === "string") { await load(p); setHome(false); if (isMobileViewport()) present(true, true); } };
   const newDeck = () => { if (discardOk()) { setText(STARTER); setSaved(STARTER); setPath(null); reset(); } };
   const openDeck = async () => { if (!discardOk()) return; const p = await open({ filters }); if (typeof p === "string") await load(p); };
   const saveDeck = async (as = false) => {
@@ -302,6 +311,7 @@ export default function App() {
     if (on) { triggers.newRun(); inputs.clear(); startedAt.current = Date.now(); } // a new run of the presentation: at-start regions are fresh again, variables and input boxes are back to their defaults, the clock restarts
     if (on && fromStart) setIdx(0);
     setPresenting(on);
+    if (!on && isMobileViewport()) setHome(true);
     if (on && settings().presenter) void openPresenter();
     if (!on) { bus.current?.send({ t: "end" }); void closePresenter(); }
     setWindowFs(on ? true : live.current.fs); // leaving Present returns to whatever the app was before
@@ -442,7 +452,7 @@ export default function App() {
         try { if (!sfx.folder && !localStorage.getItem("itsd.sfx.auto")) { localStorage.setItem("itsd.sfx.auto", "1"); void sfx.setFolder(`${i.workspace}/Sounds`); } } catch { /* storage may be unavailable */ }
       }).catch(() => {});
       const launch = await invoke<string | null>("launch_file").catch(() => null);
-      if (launch) { await load(launch); setHome(false); }
+      if (launch) { await load(launch); setHome(false); if (isMobileViewport()) present(true, true); }
       else { const t = await fetch("/demo.itsd").then((r) => r.text()).catch(() => STARTER); setText(t); setSaved(t); }
     })();
     const onKey = (e: KeyboardEvent) => {
@@ -603,9 +613,18 @@ export default function App() {
     <button className={prefs[k] ? "on" : ""} title={label} onClick={() => toggle(k)}><Icon n={icon} /></button>
   );
 
+  const touchStart = useRef<number | null>(null);
+  const touchEnd = (x: number) => {
+    if (!mobile || touchStart.current === null) return;
+    const delta = x - touchStart.current;
+    touchStart.current = null;
+    if (Math.abs(delta) < 45) return;
+    if (delta < 0) advance(); else go(mainPrev(view.slides, cur));
+  };
+
   return (
     <DeckCtx.Provider value={api}>
-      <div className="shell" hidden={presenting}>
+      <div className="shell" hidden={presenting || mobile}>
         <MenuBar menus={menus} right={
           <div className="seg">
             <button className={mode === "edit" ? "on" : ""} onClick={() => setMode("edit")}>Edit</button>
@@ -654,15 +673,21 @@ export default function App() {
         <StatusBar dirty={dirty} path={path} tools={tools} problems={problems} ln={pos.ln} col={pos.col} cur={cur + 1} total={view.slides.length} note={note} />
       </div>
       {presenting && (
-        <div id="stage">
+        <div id="stage" className={mobile ? "mobile-stage" : ""} onTouchStart={(e) => { touchStart.current = e.changedTouches[0]?.clientX ?? null; }} onTouchEnd={(e) => touchEnd(e.changedTouches[0]?.clientX ?? 0)}>
           <Stage deck={view} idx={cur} dir={dir.current} tools={tools} edits={edits.current} />
           <div id="hud">{count}</div>
+          {mobile && <div className="mobile-present-controls">
+            <button onClick={() => go(mainPrev(view.slides, cur))} aria-label="Previous slide">‹</button>
+            <span>{count}</span>
+            <button onClick={() => advance()} aria-label="Next slide">›</button>
+            <button className="mobile-present-exit" onClick={() => present(false)} aria-label="End presentation">×</button>
+          </div>}
         </div>
       )}
     {slideMenuAt && <ContextMenu x={slideMenuAt.x} y={slideMenuAt.y} items={slideMenuAt.items} onClose={() => setSlideMenuAt(null)} />}
     {vendorOpen && <VendorDialog sourceId={vendorOpen} onClose={() => setVendorOpen(null)} />}
       {wiki && <Wiki onClose={() => setWiki(false)} go={runWiki} can={(k) => k in wikiActions} onManual={() => { setWiki(false); setManual(true); }} />}
-      {home && !presenting && <Dashboard canClose onClose={() => setHome(false)} onOpen={(p) => void openFromHome(p)} onOpenFile={() => void pickFromHome()} onSettings={() => setSettingsOpen(true)} onManual={() => setManual(true)} />}
+      {home && !presenting && <Dashboard canClose={!mobile} onClose={() => setHome(false)} onOpen={(p) => void openFromHome(p)} onOpenFile={() => void pickFromHome()} onSettings={() => setSettingsOpen(true)} onManual={() => setManual(true)} />}
       {manual && <Manual onClose={() => setManual(false)} />}
       {settingsOpen && <SettingsDialog sfx={sfx} onClose={() => setSettingsOpen(false)} pickFolder={pickSoundFolder} pickCss={pickTraceCss} cssNote={cssNote} onReloadCss={() => void loadTraceCss()} />}
     </DeckCtx.Provider>

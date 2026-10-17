@@ -38,6 +38,38 @@ Installer metadata identifies **Damion Azure** as the publisher and includes
 `Copyright © 2026 Damion Azure`. These values are configured in the Tauri bundle
 metadata and are applied when the release workflow builds installers.
 
+### Android presentation view
+
+ITSD `0.4.0` also targets Android as a presentation-only mobile experience.
+Android users get the dashboard and can open decks into a touch-friendly
+presentation view; the desktop editing interface is hidden on mobile-sized or
+touch devices. The Android app is locked to landscape orientation and uses immersive
+fullscreen mode, hiding the Android status and navigation areas. Swipe left or
+right, or use the on-screen controls, to change slides. Presenter View remains
+optional and depends on whether the Android environment can create a second
+window.
+
+The release workflow builds and signs an ARM64 Android APK alongside the
+desktop installers. Add these GitHub repository secrets before creating the
+first Android release:
+
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+- `ANDROID_KEY_BASE64` (the base64-encoded `.jks` file)
+
+Create a keystore locally with Java's `keytool`, keep the `.jks` file private,
+and encode it for the secret:
+
+```powershell
+keytool -genkey -v -keystore "$env:USERPROFILE\itsd-upload-keystore.jks" -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\itsd-upload-keystore.jks")) | Set-Clipboard
+```
+
+Paste the clipboard contents into `ANDROID_KEY_BASE64`. Never commit the
+keystore, `keystore.properties`, or passwords. The workflow configures signing
+in the generated Android project and uploads a signed APK; keep this same
+keystore for every future Android update.
+
 1. Create a signing key with `npx tauri signer generate`.
 2. Keep the private key outside the repository (for example, as the
    `TAURI_SIGNING_PRIVATE_KEY` GitHub Actions secret).
