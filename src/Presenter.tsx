@@ -50,7 +50,7 @@ export function PresenterWindow() {
     <DeckCtx.Provider value={api}>
       <div className="pv">
         <header className="pv-bar">
-          <strong>ITSD</strong><span className="pv-name">{st?.name ?? ""}</span><span className="grow" />
+          <strong className="pv-brand"><img src="/itsd-logo.png" alt="" />ITSD</strong><span className="pv-name">{st?.name ?? ""}</span><span className="grow" />
           <span className="pv-time" title="Time on stage. Click to pause or resume." onClick={() => setRun((v) => !v)}>{run ? "" : "⏸ "}{mmss(secs)}</span>
           <button onClick={() => { setSecs(0); setRun(true); }}>Reset timer</button>
           <span className="pv-clock">{now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>

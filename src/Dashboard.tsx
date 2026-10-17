@@ -76,7 +76,7 @@ export function Dashboard({ onOpen, onClose, canClose, onSettings, onManual, onO
   return (
     <div className="home" role="dialog" aria-label="Home">
       <div className="menubar">
-        <strong className="brand">ITSD</strong><span className="hcrumb">{page === "folder" ? "Folders" : page === "recent" ? "Recent" : "Home"}</span>
+        <strong className="brand"><img src="/itsd-logo.png" alt="" />ITSD</strong><span className="hcrumb">{page === "folder" ? "Folders" : page === "recent" ? "Recent" : "Home"}</span>
         <span className="grow" />
         {canClose && <button className="hback" title="Esc" onClick={onClose}>Back to the deck</button>}
       </div>

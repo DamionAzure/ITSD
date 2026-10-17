@@ -18,8 +18,14 @@ export interface Settings {
   homeAtStart: boolean;
   /** Open the Presenter View window whenever you present. */
   presenter: boolean;
+  /** Keep recorded run output in the deck for phone playback. */
+  recordRuns: boolean;
+  /** Force or disable the phone Player mode. */
+  player: "auto" | "on" | "off";
+  /** Detected compiler availability, kept so code-run settings survive restarts. */
+  compilers: Record<string, boolean>;
 }
-export const DEFAULTS: Settings = { traceSlide: "branch", traceButton: true, traceCss: "", traceCssOn: true, scripts: "ask", workspace: "", homeAtStart: true, presenter: false };
+export const DEFAULTS: Settings = { traceSlide: "branch", traceButton: true, traceCss: "", traceCssOn: true, scripts: "ask", workspace: "", homeAtStart: true, presenter: false, recordRuns: true, player: "auto", compilers: {} };
 
 const KEY = "itsd.settings";
 const load = (): Settings => { try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") }; } catch { return { ...DEFAULTS }; } };

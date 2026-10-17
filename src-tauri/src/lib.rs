@@ -182,6 +182,18 @@ fn read_binary(path: String) -> Result<tauri::ipc::Response, String> {
     std::fs::read(&p).map(tauri::ipc::Response::new).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn write_binary(path: String, bytes: Vec<u8>) -> Result<(), String> {
+    let p = PathBuf::from(path);
+    if p.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("zip")) != Some(true) {
+        return Err("only .zip bundles can be written".into());
+    }
+    if bytes.len() > 512 * 1024 * 1024 {
+        return Err("bundle is larger than 512 MB".into());
+    }
+    std::fs::write(p, bytes).map_err(|e| e.to_string())
+}
+
 /// Family names of the fonts installed on this computer, A to Z, for the font menus.
 #[tauri::command]
 async fn list_system_fonts() -> Vec<String> {
@@ -427,7 +439,7 @@ pub fn run() {
         .plugin(tauri_plugin_http::init()) // lets the Vendor menu download from sites that don't send CORS headers
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![run_code, format_code, check_toolchains, read_deck, write_deck, launch_file, read_binary, import_asset, import_font, list_assets, list_system_fonts, read_sound, list_sounds, allow_media, import_media, workspace_init, workspace_list, workspace_stat, workspace_op, workspace_new, workspace_reveal])
+        .invoke_handler(tauri::generate_handler![run_code, format_code, check_toolchains, read_deck, write_deck, launch_file, read_binary, write_binary, import_asset, import_font, list_assets, list_system_fonts, read_sound, list_sounds, allow_media, import_media, workspace_init, workspace_list, workspace_stat, workspace_op, workspace_new, workspace_reveal])
         .run(tauri::generate_context!())
         .expect("error while running ITSD");
 }

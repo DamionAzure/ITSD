@@ -55,6 +55,9 @@ import { TRANSITIONS, parseTransition, joinTransition } from "./transitions";
 import { EFFECTS } from "./anim";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { checkForUpdate } from "./updater";
+import { Player } from "./PhonePlayer";
+import { PLAYER, bundleBuf, bundleList, bundleText, bundleUrl, fileRefs, library, openBytes, packBundle, savePos, setBundle, type Opened } from "./player";
+import { splitRuns, joinRuns, loadRuns, runsSaved, allRuns, useRunsDirty } from "./runs";
 
 const filters = [{ name: "Interactive slide deck", extensions: ["itsd"] }];
 const STARTER = "# New deck\n\nStart typing.\n\n---\n\n# Second slide\n";
@@ -136,7 +139,8 @@ export default function App() {
   }, [deck, traces, claims, st.traceSlide]);
   const tracedIds = useMemo(() => Object.fromEntries(view.slides.filter((s) => s.virtual).map((s) => [s.id, true])), [view]);
   const cur = Math.min(idx, view.slides.length - 1);
-  const dirty = text !== saved;
+  const runsDirty = useRunsDirty();
+  const dirty = text !== saved || runsDirty;
   const live = useRef({ deck, view, cur, text, path, presenting, dirty, fs, mode, traces, claims }); live.current = { deck, view, cur, text, path, presenting, dirty, fs, mode, traces, claims };
 
   useEffect(() => { try { localStorage.setItem("itsd.layout", JSON.stringify(prefs)); } catch { /* storage may be unavailable */ } }, [prefs]);
@@ -161,16 +165,17 @@ export default function App() {
 
   // Files named in a deck resolve next to the .itsd file (or are absolute).
   const resolveRef = (ref: string) => {
+    if (PLAYER) return ref;
     if (isAbs(ref)) return ref;
     const base = live.current.path;
     if (!base) throw new Error("save the deck first so relative files can be found");
     return base.replace(/[^\\/]*$/, "") + ref;
   };
-  const assets = useMemo(() => createAssets(async (ref) => invoke<ArrayBuffer>("read_binary", { path: resolveRef(ref) })), []);
+  const assets = useMemo(() => createAssets(async (ref) => PLAYER ? bundleBuf(ref) : invoke<ArrayBuffer>("read_binary", { path: resolveRef(ref) })), []);
   const triggers = useMemo(createTriggers, []);
   const sfx = useMemo(() => createSound({
-    read: (p) => invoke<ArrayBuffer>("read_sound", { path: p }),
-    list: (d) => invoke<string[]>("list_sounds", { dir: d }),
+    read: (p) => PLAYER ? Promise.resolve(bundleBuf(p.replace(/^bundle:[\\/]*/, ""))) : invoke<ArrayBuffer>("read_sound", { path: p }),
+    list: (d) => PLAYER ? Promise.resolve(bundleList(["mp3", "wav", "ogg", "m4a", "flac", "aac", "opus"])) : invoke<string[]>("list_sounds", { dir: d }),
     resolve: resolveRef,
   }), []);
   useSyncExternalStore(sfx.subscribe, sfx.snapshot);
@@ -213,7 +218,7 @@ export default function App() {
     presenting: () => live.current.presenting,
     getSource: (n) => live.current.deck.sources[n],
     readFile: async (ref) => {
-      return invoke<string>("read_deck", { path: resolveRef(ref) });
+      return PLAYER ? bundleText(ref) : invoke<string>("read_deck", { path: resolveRef(ref) });
     },
     goto: (n) => { const k = live.current.view.slides.findIndex((s) => !s.virtual && s.id === n - 1); if (k >= 0) go(k); },
     onTrace: (id, name, frames, code) => {
@@ -244,7 +249,7 @@ export default function App() {
     tracePlayer: players,
     splitTrace: (id, blk) => commit(splitTraceBlock(live.current.text, id, blk)),
     branch: enterBranch, proceed: proceedBranch, back: leaveBranch,
-    mediaUrl: async (ref) => { const p = resolveRef(ref); await invoke("allow_media", { path: p }); return convertFileSrc(p); },
+    mediaUrl: async (ref) => { if (PLAYER) return bundleUrl(ref); const p = resolveRef(ref); await invoke("allow_media", { path: p }); return convertFileSrc(p); },
     };
   }, [go, inputs, assets, sfx, enterBranch, proceedBranch, leaveBranch]);
   // Every Next (key or button) first offers the press to a waiting when-next flash region; otherwise it advances.
@@ -253,7 +258,7 @@ export default function App() {
 
   const discardOk = () => !live.current.dirty || window.confirm("Discard unsaved changes?");
   const reset = () => { scriptOk.current = null; edits.current.clear(); inputs.clear(); setTraces({}); lastTrace.current = ""; setIdx(0); };
-  const load = async (p: string) => { const t = await invoke<string>("read_deck", { path: p }); setText(t); setSaved(t); setPath(p); reset(); addRecent(p); };
+  const load = async (p: string) => { const f = splitRuns(await invoke<string>("read_deck", { path: p })); loadRuns(f.runs); setText(f.text); setSaved(f.text); setPath(p); reset(); addRecent(p); };
   const openFromHome = async (p: string) => { if (!discardOk()) return; try { await load(p); setHome(false); if (isMobileViewport()) present(true, true); } catch (e) { window.alert(`Couldn't open ${p}: ${e}`); } };
   const pickFromHome = async () => { if (!discardOk()) return; const p = await open({ filters }); if (typeof p === "string") { await load(p); setHome(false); if (isMobileViewport()) present(true, true); } };
   const newDeck = () => { if (discardOk()) { setText(STARTER); setSaved(STARTER); setPath(null); reset(); } };
@@ -262,9 +267,62 @@ export default function App() {
     let p = as ? null : live.current.path;
     if (!p) p = await save({ defaultPath: wsInfo.current ? `${wsInfo.current.workspace}/Decks/talk.itsd` : "talk.itsd", filters });
     if (!p) return null;
-    await invoke("write_deck", { path: p, content: live.current.text });
-    setPath(p); live.current.path = p; setSaved(live.current.text); addRecent(p);
+    await invoke("write_deck", { path: p, content: joinRuns(live.current.text, allRuns()) });
+    setPath(p); live.current.path = p; setSaved(live.current.text); runsSaved(); addRecent(p);
     return p;
+  };
+  const [pl, setPl] = useState<{ id: string; name: string } | null>(null);
+  const [plError, setPlError] = useState("");
+  const [plBusy, setPlBusy] = useState(false);
+  const openLoaded = async (o: Opened, id: string) => {
+    const f = splitRuns(o.text);
+    loadRuns(f.runs);
+    setBundle(o.files, o.dir);
+    assets.clear();
+    sfx.clearCache();
+    await sfx.setFolder("bundle:");
+    setText(f.text);
+    setSaved(f.text);
+    setPath(null);
+    reset();
+    setPl({ id, name: o.name });
+  };
+  const plOpenFile = async (name: string, bytes: Uint8Array) => {
+    setPlBusy(true);
+    setPlError("");
+    try {
+      const o = openBytes(name, bytes);
+      await openLoaded(o, await library.put(o.name, bytes));
+    } catch (e) {
+      setPlError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPlBusy(false);
+    }
+  };
+  const plOpenId = async (id: string) => {
+    const e = await library.get(id);
+    if (e) await plOpenFile(e.name, e.bytes);
+    else setPlError("That deck is no longer stored on this device.");
+  };
+  const plDemo = async () => {
+    try {
+      const r = await fetch("demo.itsd");
+      await plOpenFile("Demo", new Uint8Array(await r.arrayBuffer()));
+    } catch (e) {
+      setPlError(e instanceof Error ? e.message : "The demo deck could not be loaded.");
+    }
+  };
+  const plClose = () => { setPresenting(false); setPl(null); };
+  useEffect(() => { if (PLAYER && pl) savePos(pl.id, cur); }, [pl, cur]);
+  const packForPhone = async () => {
+    const p = live.current.path;
+    if (!p) { say("Save the deck first, then package it."); return; }
+    const dest = await save({ title: "Package for phone", defaultPath: p.replace(/\.itsd$/i, "") + ".zip", filters: [{ name: "ITSD bundle", extensions: ["zip"] }] });
+    if (!dest) return;
+    const name = p.replace(/^.*[\\/]/, "").replace(/\.itsd$/i, "") || "deck";
+    const result = await packBundle(name, joinRuns(live.current.text, allRuns()), fileRefs(live.current.text), async (ref) => new Uint8Array(await invoke<ArrayBuffer>("read_binary", { path: resolveRef(ref) })));
+    await invoke("write_binary", { path: dest, bytes: result.zip });
+    say(`Packaged ${name}.zip${result.missing.length ? `; not found: ${result.missing.slice(0, 4).join(", ")}` : ""}`);
   };
   // ---- pictures: files are copied into an assets folder next to the deck and referenced by relative path ----
   const refreshAssets = async (deckPath = live.current.path) => {
@@ -445,7 +503,13 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      setTools(await invoke<Record<string, boolean>>("check_toolchains").catch(() => ({})));
+      if (PLAYER) {
+        setTools({ node: true });
+        return;
+      }
+      const detected = await invoke<Record<string, boolean>>("check_toolchains").catch(() => ({}));
+      setTools(detected);
+      setSettings({ compilers: detected });
       if (!settings().homeAtStart) setHome(false);
       void wsInit(settings().workspace).then((i) => { // the ITSD folder exists from the first start; its Sounds folder is the sound folder until you choose another
         wsInfo.current = i;
@@ -621,6 +685,31 @@ export default function App() {
     if (Math.abs(delta) < 45) return;
     if (delta < 0) advance(); else go(mainPrev(view.slides, cur));
   };
+
+  if (PLAYER) return (
+    <Player
+      error={plError}
+      busy={plBusy}
+      openFile={plOpenFile}
+      openId={plOpenId}
+      openDemo={plDemo}
+      deck={pl ? {
+        view,
+        cur,
+        dir: dir.current,
+        tools,
+        edits: edits.current,
+        name: pl.name,
+        next: advance,
+        prev: () => go(mainPrev(view.slides, cur)),
+        go,
+        branch: enterBranch,
+        back: leaveBranch,
+        proceed: proceedBranch,
+        close: plClose,
+      } : null}
+    />
+  );
 
   return (
     <DeckCtx.Provider value={api}>

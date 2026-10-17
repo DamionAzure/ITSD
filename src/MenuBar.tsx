@@ -23,7 +23,7 @@ export function MenuBar({ menus, right }: { menus: { name: string; items: Item[]
   }, [open]);
   return (
     <div className="menubar">
-      <strong className="brand">ITSD</strong>
+      <strong className="brand"><img src="/itsd-logo.png" alt="" />ITSD</strong>
       {menus.map((m, i) => (
         <div className="menu" key={m.name} onMouseDown={(e) => e.stopPropagation()} onMouseEnter={() => open !== null && setOpen(i)}>
           {m.run ? <button className={m.on ? "on" : ""} title={m.title} onClick={() => { setOpen(null); m.run!(); }}>{m.name}</button>

@@ -1,6 +1,6 @@
 {
   "name": "itsd",
-  "version": "0.4.0",
+  "version": "0.4.5",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
     "bundle:msi": "tauri build --bundles msi"
   },
   "dependencies": {
+    "fflate": "^0.8.3",
     "@chakra-ui/react": "^3.37.0",
     "@emotion/react": "^11.14.0",
     "@gsap/react": "^2.1.2",

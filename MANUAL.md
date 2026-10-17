@@ -521,3 +521,9 @@ it takes. **Apply to all slides** clears per-slide choices. **Morph** makes the 
 ## I want things to fly in, pulse or disappear
 Click **Animations** in the toolbar. Pick the object, choose how it starts (On click, With previous, After previous, When the slide appears), then click an effect: Entrance, Emphasis or Exit. The pane
 underneath lists them in the order Next plays them; use ▲ ▼ to reorder and ✕ to remove. Press Next under the canvas to try it, or Present.
+
+## I want to present a deck from my phone
+
+On Android, ITSD opens in **Phone Player** rather than the editor. Choose **Open a deck** and select a `.itsd` file or a ZIP made on the desktop with **File > Package for phone (.zip)**. The ZIP carries the local media, fonts, and styles referenced by the deck. Opened decks stay in the on-device library and remember the last slide.
+
+Swipe left or right, tap the screen edges, or use the controls to move. The Player also includes a slide picker, speaker notes, branches, and fullscreen mode. JavaScript (`js` or `node`) blocks run on the phone; other code can replay output recorded on the desktop. Keep **Settings > Record runs** enabled and save before packaging when a deck needs offline code playback.

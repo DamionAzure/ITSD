@@ -40,7 +40,7 @@ metadata and are applied when the release workflow builds installers.
 
 ### Android presentation view
 
-ITSD `0.4.0` also targets Android as a presentation-only mobile experience.
+ITSD `0.4.5` also targets Android as a presentation-only mobile experience.
 Android users get the dashboard and can open decks into a touch-friendly
 presentation view; the desktop editing interface is hidden on mobile-sized or
 touch devices. The Android app is locked to landscape orientation and uses immersive
@@ -69,6 +69,19 @@ Paste the clipboard contents into `ANDROID_KEY_BASE64`. Never commit the
 keystore, `keystore.properties`, or passwords. The workflow configures signing
 in the generated Android project and uploads a signed APK; keep this same
 keystore for every future Android update.
+
+### Phone Player and deck bundles
+
+The Android app opens decks in the offline Phone Player. On a computer, use
+**File > Package for phone (.zip)** to create a bundle containing the deck and
+the local pictures, sounds, videos, fonts, and styles it references. Open that
+ZIP in the Player; imported decks are kept in an on-device library using
+IndexedDB and reopen at the last slide.
+
+JavaScript (`js` or `node`) blocks can run locally in the Player. Other code
+blocks need recorded output; leave **Settings > Record runs** enabled and save
+the deck before packaging it. The Player can replay recorded runs without a
+compiler.
 
 1. Create a signing key with `npx tauri signer generate`.
 2. Keep the private key outside the repository (for example, as the
