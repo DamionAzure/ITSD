@@ -897,9 +897,9 @@ print(a)
     </footer>
   </div>
   <script>
-    const labels = { "windows-x86_64":["Windows","64-bit installer"], "darwin-aarch64":["macOS","Apple Silicon"], "darwin-x86_64":["macOS","Intel"], "linux-x86_64":["Linux","AppImage"] };
-    const ua = navigator.userAgent.toLowerCase(), family = ua.includes("win") ? "windows" : ua.includes("mac") || ua.includes("iphone") || ua.includes("ipad") ? "darwin" : "linux";
-    const recommended = family === "darwin" ? (/arm64|aarch64/.test(ua) ? "darwin-aarch64" : "darwin-x86_64") : family === "windows" ? "windows-x86_64" : "linux-x86_64";
+    const labels = { "windows-x86_64":["Windows","64-bit installer"], "darwin-aarch64":["macOS","Apple Silicon"], "darwin-x86_64":["macOS","Intel"], "linux-x86_64":["Linux","AppImage"], "android-arm64":["Android","ARM64 APK"] };
+    const ua = navigator.userAgent.toLowerCase(), family = /android/.test(ua) ? "android" : ua.includes("win") ? "windows" : ua.includes("mac") || ua.includes("iphone") || ua.includes("ipad") ? "darwin" : "linux";
+    const recommended = family === "android" ? "android-arm64" : family === "darwin" ? (/arm64|aarch64/.test(ua) ? "darwin-aarch64" : "darwin-x86_64") : family === "windows" ? "windows-x86_64" : "linux-x86_64";
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
     fetch("/api/latest").then((r) => r.ok ? r.json() : Promise.reject()).then((m) => {
       const version = `v${m.version || "unknown"}`; document.title = `ITSD ${version}`;
