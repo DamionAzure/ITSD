@@ -4,7 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Download the latest version of ITSD, the interactive slide deck editor.">
-  <title>ITSD Updates</title>
+  <title>ITSD – Interactive slide decks</title>
+  <meta property="og:title" content="ITSD">
+  <meta property="og:description" content="Slide decks written as plain text, with code that runs and traces you can present.">
+  <meta property="og:image" content="img/og.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314171e'/%3E%3Crect x='8' y='8' width='16' height='16' rx='3' fill='%235ea9ff'/%3E%3C/svg%3E">
   <style>
     :root {
       color-scheme: dark;
@@ -652,6 +656,40 @@
     }
     .tl-entry.hidden { display: none; }
 
+
+    /* Pictures + sections */
+    .shot { margin: 0 0 56px; border: 1px solid var(--edge-hi); border-radius: 12px; overflow: hidden; background: #1e1e1e; box-shadow: var(--shadow); animation: fadeUp .7s .18s ease both; }
+    .shot img, .frame img { display: block; width: 100%; height: auto; }
+    .facts { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--edge); border-radius: 12px; background: var(--card); margin: 56px 0 0; }
+    .facts div { padding: 18px 20px; border-left: 1px solid var(--edge); } .facts div:first-child { border-left: 0; }
+    .facts b { display: block; font-size: 14px; } .facts span { color: var(--dim); font-size: 13px; }
+    .block { margin-top: 72px; padding-top: 48px; border-top: 1px dashed rgba(255,255,255,.06); }
+    .block > h2 { font-size: 26px; letter-spacing: -.02em; margin-bottom: 8px; }
+    .block > .sub { color: var(--dim); max-width: 620px; margin: 0 0 28px; font-size: 15px; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .fcard { padding: 20px; border: 1px solid var(--edge); border-radius: 12px; background: var(--card); }
+    .fcard h3 { margin: 0 0 6px; font-size: 16px; } .fcard p { margin: 0; color: var(--dim); font-size: 14px; }
+    .row { display: grid; grid-template-columns: 5fr 7fr; gap: 40px; align-items: center; padding: 28px 0; }
+    .row.flip { grid-template-columns: 7fr 5fr; } .row.flip .text { order: 2; }
+    .row + .row { border-top: 1px solid var(--edge); }
+    .row h3 { margin: 0 0 8px; font-size: 22px; letter-spacing: -.02em; } .row p { margin: 0 0 10px; color: var(--dim); }
+    .row ul { margin: 10px 0 0; padding-left: 18px; color: var(--dim); font-size: 14px; } .row li { margin: 3px 0; }
+    .frame { border: 1px solid var(--edge-hi); border-radius: 10px; overflow: hidden; background: #1e1e1e; box-shadow: 0 18px 50px rgba(0,0,0,.45); }
+    kbd { font: 12px ui-monospace, Consolas, monospace; padding: 1px 6px; border: 1px solid var(--edge-hi); border-bottom-width: 2px; border-radius: 5px; background: var(--card); }
+    .file { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }
+    pre { margin: 0; padding: 20px 22px; overflow: auto; background: #101218; border: 1px solid var(--edge); border-radius: 12px; font: 13px/1.65 ui-monospace, Consolas, monospace; color: #d4d4d4; }
+    pre .c { color: #6a9955; } pre .k { color: #9cdcfe; } pre .s { color: #ce9178; } pre .h { color: #569cd6; font-weight: 700; }
+    .points { display: grid; gap: 14px; align-content: center; } .points div { padding-left: 16px; border-left: 2px solid var(--blue); } .points b { display: block; } .points span { color: var(--dim); font-size: 14px; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; counter-reset: s; }
+    .steps div { counter-increment: s; padding: 16px 16px 16px 52px; position: relative; border: 1px solid var(--edge); border-radius: 12px; background: var(--card); }
+    .steps div::before { content: counter(s); position: absolute; left: 15px; top: 15px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--blue); color: #06111c; font-weight: 700; font-size: 13px; }
+    .steps b { display: block; } .steps span { color: var(--dim); font-size: 14px; }
+    .workspace { margin-bottom: 0; }
+    code { white-space: nowrap; }
+    .tl-toggle[hidden] { display: none; }
+    @media (max-width: 860px) { .cards, .steps { grid-template-columns: 1fr 1fr; } .facts { grid-template-columns: 1fr 1fr; } .facts div:nth-child(3) { border-left: 0; } .facts div:nth-child(n+3) { border-top: 1px solid var(--edge); } .row, .row.flip, .file { grid-template-columns: 1fr; } .row.flip .text { order: 0; } }
+    @media (max-width: 560px) { .cards, .steps { grid-template-columns: 1fr; } }
+
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
@@ -670,17 +708,62 @@
         transition: none !important;
       }
     }
+
+    /* ---- Look of the ITSD app: flat, VS Code-like chrome ---- */
+    :root { --bg:#1e1e1e; --chrome:#1b1c20; --chrome2:#212226; --chrome3:#2a2c31; --panel:#212226; --card:#25272c; --card-hi:#2a2c31; --edge:#33353b; --edge-hi:#3d4047; --blue:#4da3ff; --blue-deep:#4da3ff; --dim:#9aa0a6; --dimmer:#7d838b; --shadow:none; }
+    body { background: var(--bg); font-family: "Inter", "Segoe UI Variable", system-ui, -apple-system, sans-serif; }
+    body::before, body::after { display: none; }
+    .shell { width: 100%; margin: 0; border: 0; border-radius: 0; background: var(--bg); box-shadow: none; backdrop-filter: none; overflow: visible; min-height: 100vh; display: flex; flex-direction: column; }
+    .menubar { position: sticky; top: 0; z-index: 20; height: 36px; min-height: 36px; padding: 0 12px; background: var(--chrome); backdrop-filter: none; gap: 10px; font-size: 13px; }
+    .brand { color: #9cdcfe; letter-spacing: .04em; } .brand::before { display: none; }
+    .crumb { color: #c9ccd2; background: #2e3036; border-radius: 6px; padding: 2px 10px; font-weight: 500; font-size: 12.5px; }
+    .version { border-radius: 999px; background: var(--chrome3); border-color: #3d4047; color: #dcdfe4; font-size: 11.5px; }
+    .ctxbar { position: sticky; top: 36px; z-index: 19; display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; background: var(--chrome2); border-bottom: 1px solid var(--edge); font-size: 12.5px; overflow-x: auto; white-space: nowrap; }
+    .ctxbar a { color: #dcdfe4; text-decoration: none; background: var(--chrome3); border: 1px solid #3d4047; border-radius: 7px; padding: 4px 12px; transition: border-color .12s, background .12s; }
+    .ctxbar a:hover { border-color: var(--blue); }
+    .ctxbar a.lbl { background: #2e3036; color: #fff; font-weight: 600; border-color: transparent; }
+    .ctxbar .grow { flex: 1; }
+    html { scroll-padding-top: 90px; scroll-behavior: smooth; }
+    main { width: min(1120px, 100%); margin: 0 auto; flex: 1; padding: clamp(32px, 5vw, 64px) clamp(18px, 4vw, 40px) 72px; }
+    .eyebrow { font-size: 13px; text-shadow: none; } .eyebrow::before { background: var(--blue); width: 28px; }
+    h1 { font-size: clamp(36px, 6vw, 62px); letter-spacing: -.04em; }
+    h1 .accent { background: none; color: var(--blue); -webkit-text-fill-color: currentColor; }
+    .button { border-radius: 7px; font-size: 13.5px; padding: 9px 16px; background: var(--chrome3); border-color: #3d4047; }
+    .button:hover { transform: none; background: var(--chrome3); }
+    .button.primary { background: var(--blue); color: #04101f; box-shadow: none; border-color: var(--blue); } .button.primary:hover { transform: none; background: #6ab4ff; box-shadow: none; }
+    .shot, .frame { border-radius: 8px; border-color: var(--edge-hi); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    .panel, .fcard, .steps div, .facts, .tl-card { border-radius: 8px; background: var(--card); box-shadow: none; }
+    .panel { background: var(--card); } .panel:hover { border-color: var(--edge); }
+    .tl-entry.latest .tl-card, .tl-entry:hover .tl-card { box-shadow: none; background: var(--card-hi); }
+    .tl-entry.latest::before { box-shadow: none; } .tl-entry.latest::after { animation: none; }
+    .tl-badge.latest { box-shadow: none; }
+    .tag { border-radius: 6px; } .release-date::before { box-shadow: none; }
+    .platform { border-radius: 7px; background: var(--chrome3); } .platform:hover { transform: none; background: var(--chrome3); }
+    pre { background: #1a1b1e; border-radius: 8px; }
+    .block { border-top-color: var(--edge); }
+    .block > h2, .timeline-header h2 { font-size: 22px; letter-spacing: -.01em; } .timeline-header h2::before { display: none; }
+    footer { position: sticky; bottom: 0; z-index: 18; height: 26px; padding: 0 12px; gap: 16px; background: #16171a; color: #9aa0a6; border-top: 1px solid var(--edge); font-size: 12px; }
+    footer .grow { flex: 1; }
+    @media (max-width: 700px) { footer span:nth-of-type(3) { display: none; } }
   </style>
 </head>
 <body>
   <div class="shell">
     <header class="menubar">
       <span class="brand">ITSD</span>
-      <span class="crumb">/ Updates</span>
+      <span class="crumb">Updates</span>
       <span class="grow"></span>
       <span class="version" id="top-version">Loading release…</span>
     </header>
-    <main>
+    <nav class="ctxbar" aria-label="Sections">
+      <a class="lbl" href="#top">Overview</a>
+      <a href="#features">Features</a>
+      <a href="#download">Download</a>
+      <a href="#releases">Releases</a>
+      <span class="grow"></span>
+      <a href="https://github.com/DamionAzure/ITSD" target="_blank" rel="noopener">Source ↗</a>
+    </nav>
+    <main id="top">
       <div class="eyebrow"><span class="text" id="eyebrow-text" data-text="Interactive Tauri Slide Decks">Interactive Tauri Slide Decks</span></div>
       <h1>Present ideas that <span class="accent">respond.</span></h1>
       <p class="lead">Download the latest ITSD editor for your platform. Your decks stay as plain files, presentations work offline, and signed updates arrive without making you hunt for an installer.</p>
@@ -694,6 +777,7 @@
           View source and releases ↗
         </a>
       </div>
+      <figure class="shot" style="margin-inline:0"><img src="img/editor.webp" width="1600" height="1000" alt="The ITSD editor: Markdown on the left, the slide preview on the right, with the slide list and ribbon."></figure>
       <div class="workspace">
         <section class="panel" id="download">
           <div class="panel-head">
@@ -712,7 +796,91 @@
         </section>
       </div>
 
-      <section class="timeline-section">
+
+      <div class="facts">
+        <div><b>Plain text</b><span>One .itsd file per deck</span></div>
+        <div><b>Offline</b><span>No account, no cloud</span></div>
+        <div><b>Runs code</b><span>On your own machine</span></div>
+        <div><b>Signed updates</b><span>Verified by the app</span></div>
+      </div>
+
+      <section class="block" id="features">
+        <h2>Write a talk like you write notes</h2>
+        <p class="sub">ITSD is a slide editor built around a text file. You type Markdown, the slide appears beside it, and anything that can be run or clicked stays live while you present.</p>
+        <div class="cards">
+          <div class="fcard"><h3>Markdown first</h3><p>Headings, lists, images and code blocks become slides. Separate slides with <code>---</code>.</p></div>
+          <div class="fcard"><h3>Code that runs</h3><p>Mark a block to run it. Output shows up on the slide, and your audience sees it happen.</p></div>
+          <div class="fcard"><h3>Traces</h3><p>Turn a run into bars, grids, trees or a step list, and style every part of it.</p></div>
+          <div class="fcard"><h3>Interactive</h3><p>Variables and buttons let people change a slide while you present it.</p></div>
+          <div class="fcard"><h3>Presenter view</h3><p>Speaker notes, the next slide and a timer on one screen, the audience on another.</p></div>
+          <div class="fcard"><h3>Built-in wiki</h3><p>Press <kbd>F2</kbd> for a searchable guide to every option, right inside the app.</p></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>A closer look</h2>
+        <p class="sub">Screenshots from the editor itself.</p>
+        <div class="row">
+          <div class="text"><h3>Run it, then show it</h3><p>A run can produce a trace slide on its own. It branches off the slide you wrote, so you can restyle it without touching your code.</p><ul><li>Bars, dots, grid, stack, tree and ring views</li><li>Names and colours for each step</li></ul></div>
+          <div class="frame"><img src="img/trace.webp" width="1600" height="1000" loading="lazy" alt="A bubble sort shown as coloured bars next to a list of its steps."></div>
+        </div>
+        <div class="row flip">
+          <div class="text"><h3>Design on the slide</h3><p>Drag and resize anything on the slide. The position is written back to your text, so the file stays the source of truth.</p></div>
+          <div class="frame"><img src="img/visual.webp" width="1600" height="1000" loading="lazy" alt="The visual editor with a selected element and its inspector."></div>
+        </div>
+        <div class="row">
+          <div class="text"><h3>Present with notes</h3><p>Start the show with <kbd>F5</kbd>, and open the presenter view on a second screen.</p></div>
+          <div class="frame"><img src="img/presenter.webp" width="1400" height="860" loading="lazy" alt="The presenter view with the current slide, next slide, notes and a timer."></div>
+        </div>
+        <div class="row flip">
+          <div class="text"><h3>Your decks, one place</h3><p>The home screen lists every deck in your workspace, with a live preview of each.</p></div>
+          <div class="frame"><img src="img/home.webp" width="1600" height="640" loading="lazy" alt="The home screen with deck previews."></div>
+        </div>
+        <div class="row">
+          <div class="text"><h3>Documentation inside</h3><p>The wiki explains each option with an example you can copy.</p></div>
+          <div class="frame"><img src="img/wiki.webp" width="1600" height="1000" loading="lazy" alt="The in-app wiki."></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>A deck is a text file</h2>
+        <p class="sub">This is a real slide. Open it in any editor, keep it in git, send it in an email.</p>
+        <div class="file">
+<pre><span class="h"># How sorting works</span>
+
+<span class="c">- Edit the text, the slide changes</span>
+<span class="c">- Press F5 to present</span>
+
+<span class="k">::: notes</span>
+Ask who has used a slide editor
+that can run code.
+<span class="k">:::</span>
+
+<span class="s">```python run id=sort</span>
+a = [5, 2, 4, 1, 3]
+a.sort()
+print(a)
+<span class="s">```</span>
+
+<span class="k">::: trace-bars from=sort view=bars</span></pre>
+          <div class="points">
+            <div><b>Readable diffs</b><span>Every change to a talk is a line in a file.</span></div>
+            <div><b>No lock-in</b><span>Nothing is stored anywhere except the file you can see.</span></div>
+            <div><b>Share it as it is</b><span>The person you send it to needs the app, nothing else.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>Get started in three steps</h2>
+        <div class="steps">
+          <div><b>Install</b><span>Pick your platform in the panel above.</span></div>
+          <div><b>Open a deck</b><span>Start from the home screen, or open any .itsd file.</span></div>
+          <div><b>Press F5</b><span>That's it, you're presenting.</span></div>
+        </div>
+      </section>
+
+      <section class="timeline-section" id="releases">
         <div class="timeline-header">
           <h2>Release timeline</h2>
           <div class="sub">Every signed release, newest first. <a href="https://github.com/DamionAzure/ITSD/releases" target="_blank" rel="noopener">View all on GitHub ↗</a></div>
@@ -724,8 +892,8 @@
       </section>
     </main>
     <footer>
-      <span class="dot"></span>
-      ITSD updates are signature-verified by the app. The page and manifest are served by Vercel; release installers are published by GitHub.
+      <span>Ready</span><span class="grow"></span>
+      <span>Updates are signature-verified by the app</span><span>Page by Vercel · installers by GitHub</span>
     </footer>
   </div>
   <script>
