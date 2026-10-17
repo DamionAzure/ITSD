@@ -28,3 +28,4 @@ Thumbs.db
 # Everyone gets them straight from React Bits instead: the app's Vendor menu, or `npm run module:reactbits -- add '*'`.
 src/modules/*/components/
 updates/README.md
+itsd-release.jks
