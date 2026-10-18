@@ -15,7 +15,7 @@ function detect(): boolean {
 }
 export const PLAYER = detect();
 
-// ---- bundles: a .zip with the deck and the files it names ----
+// ---- packages: a ZIP container with the deck and the files it names ----
 const MIME: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", avif: "image/avif", mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg", m4a: "audio/mp4", flac: "audio/flac", aac: "audio/aac", opus: "audio/ogg", mp4: "video/mp4", webm: "video/webm", woff: "font/woff", woff2: "font/woff2", ttf: "font/ttf", otf: "font/otf", css: "text/css" };
 const extOf = (p: string) => (p.split(".").pop() ?? "").toLowerCase();
 let files = new Map<string, Uint8Array>(), base = "";
@@ -57,20 +57,28 @@ export const bundleText = (ref: string) => new TextDecoder().decode(bundleGet(re
 
 export interface Opened { name: string; text: string; files: Map<string, Uint8Array>; dir: string }
 const isZip = (b: Uint8Array) => b.length > 3 && b[0] === 0x50 && b[1] === 0x4b;
-/** A .itsd text file, or a .zip that holds one (the shallowest) plus its files. */
+/** A .itsd text file, or a .zip/.itsdpak package that holds one plus its files. */
 export function openBytes(name: string, bytes: Uint8Array): Opened {
   if (!isZip(bytes)) return { name: name.replace(/\.(itsd|md|txt)$/i, ""), text: new TextDecoder().decode(bytes), files: new Map(), dir: "" };
   const all = unzipSync(bytes), map = new Map<string, Uint8Array>();
-  for (const [k, v] of Object.entries(all)) if (!k.endsWith("/")) map.set(norm(k), v);
+  for (const [k, v] of Object.entries(all)) {
+    if (k.endsWith("/")) continue;
+    const normalized = norm(k);
+    if (!normalized || /^[\\/]/.test(k) || /^[A-Za-z]:[\\/]/.test(k) || k.replace(/\\/g, "/").split("/").some((part) => part === "..")) throw new Error("This package contains an unsafe file path.");
+    map.set(normalized, v);
+  }
   const decks = [...map.keys()].filter((k) => /\.itsd$/i.test(k) && !k.startsWith("__MACOSX")).sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b));
-  if (!decks.length) throw new Error("This .zip has no .itsd deck in it.");
+  if (!decks.length) throw new Error("This package has no .itsd deck in it.");
   const d = decks[0];
   return { name: d.split("/").pop()!.replace(/\.itsd$/i, ""), text: new TextDecoder().decode(map.get(d)!), files: map, dir: d.includes("/") ? d.slice(0, d.lastIndexOf("/")) : "" };
 }
 
 /** Desktop side: the deck plus every file it names, as one .zip. `read` returns a file's bytes or undefined. */
 export async function packBundle(name: string, text: string, refs: string[], read: (ref: string) => Promise<Uint8Array | undefined>): Promise<{ zip: Uint8Array; missing: string[] }> {
-  const out: Record<string, Uint8Array> = { [`${name}.itsd`]: new TextEncoder().encode(text) }, missing: string[] = [];
+  const out: Record<string, Uint8Array> = {
+    [`${name}.itsd`]: new TextEncoder().encode(text),
+    "itsd.json": new TextEncoder().encode(JSON.stringify({ format: "itsdpak", version: 1, deck: `${name}.itsd` }) + "\n"),
+  }, missing: string[] = [];
   for (const r of refs) {
     if (/^[a-z]+:\/\//i.test(r) || /^[A-Za-z]:[\\/]/.test(r) || r.startsWith("/")) { missing.push(r); continue; } // absolute paths don't travel
     const b = await read(r).catch(() => undefined);

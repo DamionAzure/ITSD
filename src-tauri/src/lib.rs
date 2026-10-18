@@ -185,8 +185,8 @@ fn read_binary(path: String) -> Result<tauri::ipc::Response, String> {
 #[tauri::command]
 fn write_binary(path: String, bytes: Vec<u8>) -> Result<(), String> {
     let p = PathBuf::from(path);
-    if p.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("zip")) != Some(true) {
-        return Err("only .zip bundles can be written".into());
+    if p.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("zip") || e.eq_ignore_ascii_case("itsdpak")) != Some(true) {
+        return Err("only .zip or .itsdpak bundles can be written".into());
     }
     if bytes.len() > 512 * 1024 * 1024 {
         return Err("bundle is larger than 512 MB".into());

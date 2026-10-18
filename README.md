@@ -73,9 +73,10 @@ keystore for every future Android update.
 ### Phone Player and deck bundles
 
 The Android app opens decks in the offline Phone Player. On a computer, use
-**File > Package for phone (.zip)** to create a bundle containing the deck and
-the local pictures, sounds, videos, fonts, and styles it references. Open that
-ZIP in the Player; imported decks are kept in an on-device library using
+**File > Export > ITSD package (.itsdpak)** to create a bundle containing the deck and
+the local pictures, sounds, videos, fonts, and styles it references. An
+`.itsdpak` file is a ZIP internally. Open it in the Player; ordinary `.zip`
+bundles remain supported for compatibility. Imported decks are kept in an on-device library using
 IndexedDB and reopen at the last slide.
 
 JavaScript (`js` or `node`) blocks can run locally in the Player. Other code

@@ -317,12 +317,12 @@ export default function App() {
   const packForPhone = async () => {
     const p = live.current.path;
     if (!p) { say("Save the deck first, then package it."); return; }
-    const dest = await save({ title: "Package for phone", defaultPath: p.replace(/\.itsd$/i, "") + ".zip", filters: [{ name: "ITSD bundle", extensions: ["zip"] }] });
+    const dest = await save({ title: "Package deck", defaultPath: p.replace(/\.itsd$/i, "") + ".itsdpak", filters: [{ name: "ITSD package", extensions: ["itsdpak", "zip"] }] });
     if (!dest) return;
     const name = p.replace(/^.*[\\/]/, "").replace(/\.itsd$/i, "") || "deck";
     const result = await packBundle(name, joinRuns(live.current.text, allRuns()), fileRefs(live.current.text), async (ref) => new Uint8Array(await invoke<ArrayBuffer>("read_binary", { path: resolveRef(ref) })));
     await invoke("write_binary", { path: dest, bytes: result.zip });
-    say(`Packaged ${name}.zip${result.missing.length ? `; not found: ${result.missing.slice(0, 4).join(", ")}` : ""}`);
+    say(`Packaged ${dest.replace(/^.*[\\/]/, "")}${result.missing.length ? `; not found: ${result.missing.slice(0, 4).join(", ")}` : ""}`);
   };
   // ---- pictures: files are copied into an assets folder next to the deck and referenced by relative path ----
   const refreshAssets = async (deckPath = live.current.path) => {
@@ -601,6 +601,7 @@ export default function App() {
       { label: "New", hint: "Ctrl+N", run: newDeck }, { label: "Open…", hint: "Ctrl+O", run: openDeck }, "-",
       { label: "Home", hint: "Ctrl+Shift+H", run: () => setHome(true) }, "-",
       { label: "Save", hint: "Ctrl+S", run: () => saveDeck() }, { label: "Save As…", hint: "Ctrl+Shift+S", run: () => saveDeck(true) }, "-",
+      { label: "Export", sub: [{ label: "ITSD package (.itsdpak)…", run: () => void packForPhone() }] }, "-",
       { label: "Settings…", hint: "Ctrl+,", run: () => setSettingsOpen(true) }] },
     { name: "Insert", items: [
       { label: "Slide", run: () => insert("slide") }, { label: "Code block", run: () => insert("code") },

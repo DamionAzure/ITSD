@@ -524,6 +524,6 @@ underneath lists them in the order Next plays them; use ▲ ▼ to reorder and �
 
 ## I want to present a deck from my phone
 
-On Android, ITSD opens in **Phone Player** rather than the editor. Choose **Open a deck** and select a `.itsd` file or a ZIP made on the desktop with **File > Package for phone (.zip)**. The ZIP carries the local media, fonts, and styles referenced by the deck. Opened decks stay in the on-device library and remember the last slide.
+On Android, ITSD opens in **Phone Player** rather than the editor. Choose **Open a deck** and select a `.itsd` file or an `.itsdpak` package made on the desktop with **File > Export > ITSD package (.itsdpak)**. An `.itsdpak` file is a ZIP internally and carries the local media, fonts, and styles referenced by the deck; ordinary `.zip` bundles remain supported. Opened decks stay in the on-device library and remember the last slide.
 
 Swipe left or right, tap the screen edges, or use the controls to move. The Player also includes a slide picker, speaker notes, branches, and fullscreen mode. JavaScript (`js` or `node`) blocks run on the phone; other code can replay output recorded on the desktop. Keep **Settings > Record runs** enabled and save before packaging when a deck needs offline code playback.

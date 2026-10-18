@@ -35,7 +35,7 @@ function Library({ openFile, openId, openDemo, error, busy }: Props) {
       <label className="pl-open">{busy ? "Opening…" : "Open a deck…"}
         <input type="file" accept="*/*" disabled={busy} onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ""; }} />
       </label>
-      <p className="pl-hint">A <b>.itsd</b> file, or a <b>.zip</b> made with <i>File → Package for phone</i> (it carries the pictures and sounds).</p>
+      <p className="pl-hint">A <b>.itsd</b> file, or an <b>.itsdpak</b> package (ordinary <b>.zip</b> bundles also work).</p>
       {error && <p className="pl-err" role="alert">{error}</p>}
       <h2>On this device</h2>
       {list === null ? <p className="pl-dim">…</p> : list.length === 0 ? <p className="pl-dim">Nothing yet.</p> : (
