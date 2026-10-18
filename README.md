@@ -40,7 +40,7 @@ metadata and are applied when the release workflow builds installers.
 
 ### Android presentation view
 
-ITSD `0.4.5` also targets Android as a presentation-only mobile experience.
+ITSD `0.5.0` also targets Android as a presentation-only mobile experience.
 Android users get the dashboard and can open decks into a touch-friendly
 presentation view; the desktop editing interface is hidden on mobile-sized or
 touch devices. The Android app is locked to landscape orientation and uses immersive
