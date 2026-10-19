@@ -2,15 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useSettings, setSettings } from "./settings";
-import { Thumb as SlideThumb } from "./SlideView";
 import { wsInit, wsList, wsStat, wsOp, wsNew, wsReveal, summarize, recent, dropRecent, ago, baseName, stem, type Entry, type WsInfo, type Summary } from "./workspace";
 
 type Page = "home" | "recent" | "folder";
 interface Card { path: string; name: string; modified: number; sum?: Summary }
 
 /** The first thing you see: start a deck, pick up where you left off, and your ITSD folder. Esc (or the button) returns to the deck being edited. */
-export function Dashboard({ onOpen, onClose, canClose, onSettings, onManual, onWiki, onOpenFile, onInfo }: {
-  onOpen: (path: string) => void; onClose: () => void; canClose: boolean; onSettings: () => void; onManual: () => void; onWiki?: () => void; onOpenFile: () => void; onInfo?: (i: WsInfo) => void;
+export function Dashboard({ onOpen, onClose, canClose, onSettings, onManual, onOpenFile, onInfo }: {
+  onOpen: (path: string) => void; onClose: () => void; canClose: boolean; onSettings: () => void; onManual: () => void; onOpenFile: () => void; onInfo?: (i: WsInfo) => void;
 }) {
   const { workspace } = useSettings();
   const [info, setInfo] = useState<WsInfo | null>(null);
@@ -65,10 +64,7 @@ export function Dashboard({ onOpen, onClose, canClose, onSettings, onManual, onW
   const mine = (p: string) => info && p.replace(/\\/g, "/").startsWith(info.workspace.replace(/\\/g, "/"));
   const shown = (l: Card[]) => l.filter((c) => !q || `${c.name} ${c.sum?.title ?? ""}`.toLowerCase().includes(q.toLowerCase()));
 
-  // The picture is the deck's first slide, drawn by the same code as the Slides panel, so it looks like the editor's preview (not a text summary).
-  const Thumb = ({ c }: { c: Card }) => c.sum?.first ? (
-    <div className="hthumb real" style={{ "--ar": "16 / 9" } as React.CSSProperties}><SlideThumb src={c.sum.first} align={c.sum.align} /></div>
-  ) : (
+  const Thumb = ({ c }: { c: Card }) => (
     <div className="hthumb"><b>{c.sum?.heading || c.sum?.title || stem(c.name)}</b>{c.sum?.lines.map((l, k) => <i key={k}>{l}</i>)}</div>
   );
   const Deck = ({ c }: { c: Card }) => (
@@ -78,7 +74,12 @@ export function Dashboard({ onOpen, onClose, canClose, onSettings, onManual, onW
   );
 
   return (
-    <div className="home" role="region" aria-label="Home">
+    <div className="home" role="dialog" aria-label="Home">
+      <div className="menubar">
+        <strong className="brand"><img src="/itsd-logo.png" alt="" />ITSD</strong><span className="hcrumb">{page === "folder" ? "Folders" : page === "recent" ? "Recent" : "Home"}</span>
+        <span className="grow" />
+        {canClose && <button className="hback" title="Esc" onClick={onClose}>Back to the deck</button>}
+      </div>
       <div className="hbody">
       <aside className="hside">
         <div className="ptitle">START</div>
@@ -89,7 +90,7 @@ export function Dashboard({ onOpen, onClose, canClose, onSettings, onManual, onW
         <div className="ptitle">INSTALLED</div>
         {roots.filter(([n]) => n === "Examples").map(([n, r]) => <button key={n} className={page === "folder" && dir.startsWith(r) ? "on" : ""} onClick={() => void show(r)}>{n}</button>)}
         <span className="grow" />
-        <button onClick={onOpenFile}>Open a file…</button><button onClick={onSettings}>Settings</button>{onWiki && <button onClick={onWiki}>Wiki</button>}<button onClick={onManual}>Manual</button>
+        <button onClick={onOpenFile}>Open a file…</button><button onClick={onSettings}>Settings</button><button onClick={onManual}>Manual</button>
       </aside>
       <main className="hmain">
         {err && <div className="herr" onClick={() => setErr("")}>{err}</div>}
@@ -107,7 +108,7 @@ export function Dashboard({ onOpen, onClose, canClose, onSettings, onManual, onW
           {info ? <dl className="hwhere">
             <dt>Your folder</dt><dd><code>{info.workspace}</code> <button onClick={() => void wsReveal(workspace, info.workspace)}>Show</button><button onClick={() => void pickWorkspace()}>Change…</button>{workspace && <button onClick={() => setSettings({ workspace: "" })}>Use Documents\ITSD</button>}</dd>
             <dt>Installed in</dt><dd><code>{info.install_dir}</code> <button onClick={() => void wsReveal(workspace, info.install_dir)}>Show</button></dd>
-            <dt>Version</dt><dd>{info.version}{info.publisher ? ` · published by ${info.publisher}` : ""} · {info.templates.length} templates and {info.examples.length} examples came with it</dd>
+            <dt>Version</dt><dd>{info.version} · {info.templates.length} templates and {info.examples.length} examples came with it</dd>
           </dl> : <p className="hdim">{err ? "" : "Preparing your ITSD folder…"}</p>}
         </>}
         {page === "recent" && <><h1>Recent</h1>{shown(recents).length ? <div className="hrow wrap">{shown(recents).map((c) => <Deck key={c.path} c={c} />)}</div> : <p className="hdim">Nothing here yet.</p>}</>}
@@ -127,10 +128,10 @@ export function Dashboard({ onOpen, onClose, canClose, onSettings, onManual, onW
       </main>
       </div>
       <footer className="statusbar">
-        <span>{busy ? `Creating ${busy}…` : page === "folder" ? "Folders" : page === "recent" ? "Recent" : "Home"}</span>
+        <span>{busy ? `Creating ${busy}…` : "Home"}</span>
         <span className="path">{info?.workspace ?? ""}</span>
         <span className="grow" />
-        {info && <span>ITSD {info.version}{info.publisher ? ` · ${info.publisher}` : ""}</span>}
+        {info && <span>ITSD {info.version}</span>}
       </footer>
     </div>
   );

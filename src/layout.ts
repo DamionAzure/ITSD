@@ -13,7 +13,7 @@ import type { Align } from "./format";
  *  fit=scale with lw: the content is laid out `lw` percent wide and then stretched to fill the w x h box. */
 export interface Place { x: number; y: number; w?: number; h?: number; rot?: number; z?: number; fit?: "scale"; lw?: number }
 /** What the layout needs to know about one block: its first/last line within the slide and the marker above it, if any. */
-export interface BlockRef { line: number; end: number; marker?: number; alignLine?: number; dir?: number }
+export interface BlockRef { line: number; end: number; marker?: number; alignLine?: number; dir?: number; lookLine?: number }
 
 const MARK = /^\s*<!--\s*@\s*(.*?)\s*-->\s*$/;
 export const isMarker = (line: string) => MARK.test(line);
@@ -53,7 +53,7 @@ export function unplaceBlock(text: string, id: number, b: BlockRef): string {
 /** Remove the block (and its marker) from the slide. */
 export function deleteBlock(text: string, id: number, b: BlockRef): string {
   const r = slideRange(text, id); if (!r) return text;
-  const from = r.start + Math.min(b.marker ?? b.line, b.alignLine ?? b.line, b.dir ?? b.line), to = r.start + b.end; // alignment, position, @id and @on lines above the block go with it
+  const from = r.start + Math.min(b.marker ?? b.line, b.alignLine ?? b.line, b.dir ?? b.line, b.lookLine ?? b.line), to = r.start + b.end; // alignment, position, @id and @on lines above the block go with it
   let n = to - from + 1;
   if (!r.lines[to + 1]?.trim() && to + 1 < r.end) n++; // take one blank line with it, so deleting doesn't leave a gap in the source
   r.lines.splice(from, n);

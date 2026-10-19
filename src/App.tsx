@@ -348,7 +348,6 @@ export default function App() {
     const r = await open({ multiple: true, filters: [{ name: "Images", extensions: IMG_EXT }] });
     return importPaths(r == null ? [] : Array.isArray(r) ? r : [r]);
   };
-  const addSlideshow = async () => { const refs = await pickImages(); if (refs.length) put(newShow(refs)); };
   const commit = (next: string) => { if (next !== live.current.text) editor.current?.replaceAll(next); };
   const media = useMemo(() => {
     const used = deck.slides.flatMap((s) => [...scanImages(s.src).map((i) => i.def.src), ...(backdropOf(s.opts).image ? [backdropOf(s.opts).image!] : [])]);
@@ -435,6 +434,8 @@ export default function App() {
     try { const ref = await invoke<string>("import_media", { deck: deckPath, src: r }); put(`::: ${kind} "${ref}"\n\n`); }
     catch (e) { window.alert(`Couldn't add ${r}: ${e}`); }
   };
+  // Slideshow: pick several pictures (copied into assets/) and insert one block that cycles through them.
+  const addSlideshow = async () => { const refs = await pickImages(); if (refs.length) put(newShow(refs)); };
   void MEDIA_EXT; void isVideo;
   // The trace stylesheet from Settings: one <style> before the deck's own, read again when the window gets focus so edits in your editor show up.
   const loadTraceCss = useCallback(async () => {
@@ -612,8 +613,8 @@ export default function App() {
       { label: "Script", sub: [
         { label: "Event rule (on key / enter / change)", run: () => insert("on") }, { label: "Macro (reusable actions)", run: () => insert("macro") }, { label: "JavaScript block", run: () => insert("script") }] },
       { label: "Trace (separate parts)", run: () => insert("trace") }, { label: "Trace (one block)", run: () => insert("traceOne") },
-      { label: "Video…", run: () => void addMedia("video") }, { label: "Audio…", run: () => void addMedia("audio") }, { label: "Slideshow…", run: () => void addSlideshow() }, { label: "Input box", run: () => insert("input") }, { label: "Speaker notes", run: () => insert("notes") }, { label: "Hidden source", run: () => insert("source") }, "-",
-      ...(live.current.mode !== "visual" ? [{ label: "Look (style the next block)", sub: PRESET_NAMES.map((n): Item => ({ label: n[0].toUpperCase() + n.slice(1), run: () => put(`<!-- @look ${n} -->\n`) })) } as Item] : []),
+      { label: "Slideshow…", run: () => void addSlideshow() }, ...(live.current.mode !== "visual" ? [{ label: "Look (style the next block)", sub: PRESET_NAMES.map((n): Item => ({ label: n[0].toUpperCase() + n.slice(1), run: () => put(`<!-- @look ${n} -->\n`) })) } as Item] : []),
+      { label: "Video…", run: () => void addMedia("video") }, { label: "Audio…", run: () => void addMedia("audio") }, { label: "Input box", run: () => insert("input") }, { label: "Speaker notes", run: () => insert("notes") }, { label: "Hidden source", run: () => insert("source") }, "-",
       { label: "Action (on Next)", run: () => put("<!-- @on next: rotate this 90 -> fade this 0.5 -->\n") },
       { label: "Flash region", sub: [
         { label: "Starts every time I arrive", run: () => insertFlash("new-slide") }, { label: "Starts the first time only", run: () => insertFlash("at-start") },
@@ -692,6 +693,7 @@ export default function App() {
   };
 
   if (PLAYER) return (
+    <DeckCtx.Provider value={api}>{/* the slides need the deck API (inputs, assets, sounds) on a phone too */}
     <Player
       error={plError}
       busy={plBusy}
@@ -714,6 +716,7 @@ export default function App() {
         close: plClose,
       } : null}
     />
+    </DeckCtx.Provider>
   );
 
   return (

@@ -44,7 +44,7 @@ export type Block = Meta & (
 type Raw = Block extends infer B ? (B extends Meta ? Omit<B, keyof Meta> : never) : never;
 
 const extLang = (ref: string) =>
-  ({ java: "java", py: "python", c: "c", cpp: "cpp", rs: "rust", go: "go", js: "node", ts: "typescript", zig: "zig", odin: "odin", rb: "ruby", lua: "lua", php: "php", pl: "perl", jl: "julia", dart: "dart", hs: "haskell", sh: "bash", sql: "sql" } as Record<string, string>)[ref.split(".").pop() ?? ""] ?? "text";
+  ({ java: "java", py: "python", c: "c", cpp: "cpp", rs: "rust", go: "go", js: "node" } as Record<string, string>)[ref.split(".").pop() ?? ""] ?? "text";
 
 function markdownBlocks(md: string, start: number): Block[] {
   const toks = marked.lexer(md) as any[];
@@ -90,6 +90,7 @@ export function toBlocks(src: string): Block[] {
   for (let i = 0; i < lines.length; i++) {
     const f = lines[i].match(/^\s*(`{3,}|~{3,})/);
     if (f) fence = fence ? (f[1][0] === fence ? null : fence) : f[1][0];
+    if (!fence && /^:::\s*notes\s*$/.test(lines[i])) { flush(); while (i + 1 < lines.length && !/^:::\s*$/.test(lines[i + 1])) i++; i++; continue; }
     const lkm = !fence && !f ? parseLook(lines[i]) : null;
     if (lkm) { flush(); lk = { a: lkm, line: i }; continue; }
     const ifm = !fence && !f ? lines[i].match(/^\s*<!--\s*if:\s*(.+?)\s*-->\s*$/) : null;
@@ -113,7 +114,6 @@ export function toBlocks(src: string): Block[] {
     const trc = !fence && !f ? lines[i].match(TRACE_LINE) : null;
     if (trc) { flush(); push({ kind: "trace", def: traceOf(trc) }, i, i); continue; }
     if (!fence && /^:::\s*(?:when|after|every|on|macro|script|key)\s+\S/.test(lines[i])) { flush(); while (i + 1 < lines.length && !/^:::\s*$/.test(lines[i + 1])) i++; i++; continue; } // a rule or timer draws nothing; scanWhen / scanTimers read it
-    if (!fence && /^:::\s*notes\s*$/.test(lines[i])) { flush(); while (i + 1 < lines.length && !/^:::\s*$/.test(lines[i + 1])) i++; i++; continue; } // speaker notes draw nothing (notes.ts)
     if (!fence && /^:::\s*var\s+\S/.test(lines[i])) { flush(); continue; } // a variable declaration draws nothing; its default is read by parseDeck
     const inp = !fence && lines[i].match(/^:::\s*input\s+(.*)$/);
     const def = inp ? parseInput(inp[1]) : null;
@@ -180,10 +180,26 @@ export function SlideView({ slide, slideKey, reveal, tools, edits, images, plain
   const al = alignOf(slide.opts.align ?? align); // slide-wide default; a block's own alignment overrides it
   useSyncExternalStore(api.subscribe, api.snapshot); // re-render when an input box changes, so {{name}} text follows it
 
-  // Slides never scroll and never resize their own content: text, code and boxes keep the size the look gives them, and anything taller
-  // than the slide is clipped at its edge. (An automatic shrink-to-fit used to live here; it fought the set look and made the slide jitter.)
+  // Slides never scroll: if the flowing content is taller than the slide, everything in it (text, code, boxes) shrinks
+  // together by `k` until it fits, and grows back when there is room again.
   const box = useRef<HTMLDivElement>(null);
-  const k = 1;
+  const [k, setK] = useState(1);
+  useEffect(() => setK(1), [slide.id]);
+  useLayoutEffect(() => {
+    const el = root.current, bx = box.current; if (!el || !bx) return;
+    const step = () => {
+      const cs = getComputedStyle(el), avail = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), need = bx.offsetHeight;
+      if (avail <= 0 || need <= 0) return;
+      setK((cur) => {
+        const want = Math.max(0.3, Math.min(1, (cur * avail * 0.995) / need));
+        const next = want < cur || (want > cur && need < avail * 0.96) ? want : cur; // only grow when there is real slack
+        return Math.abs(next - cur) < 0.01 ? cur : next;
+      });
+    };
+    step();
+    const ro = new ResizeObserver(step); ro.observe(el); ro.observe(bx);
+    return () => ro.disconnect();
+  }, [slide.id, slide.src]);
 
   useLayoutEffect(() => {
     const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));

@@ -1,4 +1,4 @@
-﻿# ITSD Manual
+# ITSD Manual
 
 *The short version for people who don't read READMEs.* Slides are plain text. You write them, run code on them, and present them.
 This page is also in the app: **Help > Manual**.
@@ -484,12 +484,6 @@ Insert > **Video…** (or **Audio…**) and choose the file. It is copied into t
 Add `autoplay` to the line so it starts when you reach the slide in Present, `loop` to repeat, `muted` for silent video. Give it `id=intro` and a button can `start intro` / `stop intro`.
 Big files are fine: they play straight from disk.
 
-## I want pictures to change by themselves
-
-Use **Insert > Slideshow…** and choose several pictures. ITSD copies them into the deck's `assets` folder and inserts a `::: slideshow` block. By default, pictures loop every three seconds with a fade. In the Visual inspector you can choose loop, random, staggered, or once playback; change effects such as slide, zoom, blur, flip, wipe, and iris; reorder or add pictures; and pause or start a named slideshow from a button.
-
-You can style a slideshow or any other supported block with a `<!-- @look neon -->` line above it. The Visual inspector includes presets such as card, glass, neon, paper, and polaroid, plus custom colors, spacing, borders, shadows, filters, and hover effects. The complete syntax is documented in [FORMAT.md](FORMAT.md).
-
 ## I want more logic in my deck (scripting)
 
 - Several steps behind one button: put the actions in a `::: macro name` block and use `call name` (with arguments: `call bump 5`, and `$1` inside the macro).
@@ -533,3 +527,19 @@ underneath lists them in the order Next plays them; use ▲ ▼ to reorder and �
 On Android, ITSD opens in **Phone Player** rather than the editor. Choose **Open a deck** and select a `.itsd` file or an `.itsdpak` package made on the desktop with **File > Export > ITSD package (.itsdpak)**. An `.itsdpak` file is a ZIP internally and carries the local media, fonts, and styles referenced by the deck; ordinary `.zip` bundles remain supported. Opened decks stay in the on-device library and remember the last slide.
 
 Swipe left or right, tap the screen edges, or use the controls to move. The Player also includes a slide picker, speaker notes, branches, and fullscreen mode. JavaScript (`js` or `node`) blocks run on the phone; other code can replay output recorded on the desktop. Keep **Settings > Record runs** enabled and save before packaging when a deck needs offline code playback.
+
+## I want to style an element (Looks)
+
+1. In the **Visual** view, click the element (text, code, button, input, picture, video, slideshow, effect).
+2. In the Inspector open **Look**, pick a preset (card, glass, neon, polaroid, pill…), then change anything: font, colours, border, rounding, shadow, glow, glass blur, shape, filters.
+   Or right-click the element > **Look** for a one-click preset. "No look" removes it.
+3. In the Edit view: **Insert > Look** puts a `<!-- @look neon -->` line where the cursor is; it styles the block right under it.
+
+Round corners and shapes work on pictures too (the `circle` and `polaroid` presets). Black-and-white, sepia, brightness and blur work on pictures and video.
+
+## I want pictures to change by themselves (Slideshow)
+
+1. **Insert > Slideshow…** and choose several pictures (save the deck first so they can be copied next to it).
+2. Select it in the Visual view. In the Inspector set **How it plays**: *loop* (1, 2, 3, then round again), *random*, *staggered* (several frames, one changing after another) or *once*.
+3. Set the seconds between changes and the change effect (fade, slide, zoom, flip, wipe, iris… or random).
+4. Want a button to pause it? Give it a name, untick **Start by itself**, and use `start name` / `stop name` in a button.

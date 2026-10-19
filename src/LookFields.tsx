@@ -46,7 +46,7 @@ export function LookPanel({ look, kind, onPatch, onPreset }: { look: LookAttrs; 
 const MODE_HINT: Record<string, string> = { loop: "pic 1, then 2, then 3, then round again", random: "a random picture each time", staggered: "several frames, one changing after another", once: "plays through, stops on the last" };
 /** The options of a slideshow block. */
 export function ShowFields({ def, onPatch, onPictures, onAdd }: { def: ShowDef; onPatch: (p: Record<string, string | null>) => void; onPictures: (srcs: string[]) => void; onAdd?: () => void }) {
-  const a: LookAttrs = { ...def.attrs, mode: def.mode, effect: def.effect, fit: def.fit };
+  const a: LookAttrs = { ...def.attrs, mode: def.mode, effect: def.effect, fit: def.fit, ...(def.shuffle ? { shuffle: "true" } : null), ...(def.pan ? { pan: "true" } : null) };
   const [list, setList] = useState<string | null>(null);
   const done = () => { if (list !== null) onPictures(list.split("\n").map((s) => s.trim()).filter(Boolean)); setList(null); };
   const f = (k: string, label: string, t: LookField["t"], extra: Partial<LookField> = {}): LookField => ({ k, label, t, ...extra });
@@ -63,7 +63,7 @@ export function ShowFields({ def, onPatch, onPictures, onAdd }: { def: ShowDef; 
         f("fit", "Picture fit", "select", { opts: ["cover", "contain"], d: "cover" }),
         ...(def.mode === "staggered" ? [f("cells", "Frames", "num", { hint: "3" }), f("cols", "Columns", "num", { hint: String(def.cols) }), f("gap", "Gap", "num", { hint: "1" })] : []),
         f("ratio", "Shape (when flowing)", "text", { hint: "16/9" }),
-        f("shuffle", "Start in a random order", "bool", { d: "false" }), f("id", "Name (for buttons)", "text", { hint: "gallery" }),
+        f("shuffle", "Start in a random order", "bool", { d: "false" }), f("pan", "Slow zoom on each picture", "bool", { d: "false" }), f("id", "Name (for buttons)", "text", { hint: "gallery" }),
       ]} />
       <label className="chk"><input type="checkbox" checked={def.autoplay} onChange={(e) => onPatch({ paused: e.target.checked ? null : "true", autoplay: null })} /> Start by itself</label>
       <p className="hint">{MODE_HINT[def.mode]}.</p>

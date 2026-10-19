@@ -72,6 +72,7 @@ const BASE_FIELDS: Record<TracePart | "all", Field[]> = {
 };
 
 /** Layout and type: the same for every part, so each one can look different. */
+import { LOOK_FIELDS, LOOK_EXTRA_KEYS } from "./look";
 const LOOK: Field[] = [
   { k: "class", label: "CSS class", t: "text", hint: "fancy (for your stylesheet)" },
   { k: "font", label: "Font", t: "text", hint: "Space Grotesk" }, { k: "weight", label: "Weight", t: "select", opts: ["", "300", "400", "500", "600", "700", "800", "900"] },
@@ -81,6 +82,7 @@ const LOOK: Field[] = [
   { k: "round", label: "Box rounding", t: "num", hint: "1.5" }, { k: "pad", label: "Padding", t: "num", hint: "1" },
   { k: "shadow", label: "Shadow", t: "select", opts: ["", "soft", "glow", "hard", "inset"] }, { k: "opacity", label: "Opacity (0 to 1)", t: "num", hint: "1" },
   { k: "align", label: "Text align", t: "select", opts: ["", "left", "center", "right"] },
+  ...(LOOK_FIELDS.filter((f) => LOOK_EXTRA_KEYS.includes(f.k) && f.k !== "size") as Field[]),
 ];
 const ANIM: Field[] = [{ k: "anim", label: "Change speed (s)", t: "num", d: "0.25" }, { k: "ease", label: "Easing", t: "select", opts: ["", "ease", "linear", "ease-in", "ease-out", "ease-in-out", "cubic-bezier(.34,1.56,.64,1)"] }];
 const STEPS: Field[] = [

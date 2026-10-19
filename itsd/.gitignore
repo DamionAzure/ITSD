@@ -1,0 +1,6 @@
+node_modules
+dist
+src-tauri/target
+# React Bits components are not committed: its licence (MIT + Commons Clause) doesn't allow redistributing the components themselves.
+# Everyone gets them straight from React Bits instead: the app's Vendor menu, or `npm run module:reactbits -- add '*'`.
+src/modules/*/components/

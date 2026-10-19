@@ -496,15 +496,6 @@ teams: Alpha, Bravo, Charlie optional: sets the unsorted order and lets a team s
   `autoplay=true` (start the replay by itself; no video), `keys=true` (while presenting, Next steps one update before leaving the slide; no video).
 - With `video=` the video's own controls are the clock; without it the board has Play / step / slider / speed / Final controls.
 
-**Look.** `look=` picks a preset: `classic` (default), `minimal`, `broadcast`, `neon`, `retro`, `glass`, `paper`. Every option below is optional and overrides the preset.
-- Colours (any CSS colour): `accent=` (clock, leader, highlights), `bg=` (board), `rowbg=` (rows), `text=`, `border=`, `bar=` (score bars), `gain=` (the +3 pop-ups), `colors=#f00,#0af,...` (one per team, in the order of `teams:`).
-- `teamcolor=` where the team colour goes: `bar` (default), `rank`, `name`, `edge`, `all`, `off`.
-- Shapes: `bars=fill|thin|gradient|none`, `rank=circle|square|plain|none`, `hot=border|glow|flash|none` (the row that just changed), `leader=badge|crown|off`, `shadow=none|soft|hard`.
-- Type: `font=default|sans|serif|mono|rounded|condensed`, `case=normal|upper`, `titlealign=left|center|right`, `prefix=` / `suffix=` around every score (`suffix=" pts"`).
-- Sizes (1 = normal): `size=` (all text), `rowh=` (row height), `gap=` (space between rows), `radius=` (corner rounding), `pad=` (padding), `bw=` (border width), `width=` (percent of the slide, 100 = full), `top=3` (show only the first three rows), `anim=` (speed of the slide/pop animations; 0 = none).
-- Parts: `head=false` (no title), `clock=false`, `delta=false` (no +3 pop-ups), `step=false` (no "3 / 6"), `controls=full|min|none`.
-- The sizes are fixed: the board, like every other block, keeps the size its look gives it and is never rescaled to fit the slide.
-
 ## Video and audio blocks
 
 ```
@@ -694,35 +685,6 @@ press Next under the canvas (or Present) to play them.
 The Source editor colours the deck's own markup: `---` separators and frontmatter keys, headings, `<!-- -->` comments with directives (`@on`, `@id`, `@`) and option keys,
 `:::` blocks and their names, action verbs, `{{variables}}`, `<span>` tags and the code inside fences (in its own language). Colours only; nothing in the file changes.
 
-## Speaker notes and the Presenter View
-
-`::: notes` ... `:::` on a slide holds what you want to say. It draws nothing. Several blocks on one slide are joined. Don't put a line that is only `---` inside (it would split the slide; the Notes box turns such a line into `- - -`).
-```
-::: notes
-Say hi.
-Mention the agenda.
-:::
-```
-Edit them in the **Notes box** under the slide (View > Speaker notes box; written into the deck when you leave the box, one undo step) or in the source (Insert > Speaker notes).
-
-**Presenter View** (Present > Presenter View, or Settings > Presenting) opens a second window when you press F5: this slide, the next one, your notes (A- / A+ for size), a timer (click to pause) and clock, Previous / Next / a slide picker / End show. Keys there: Right, Space, Enter = next; Left = previous; Esc = end. The main window stays the audience view and fully live; the presenter window only gets the slides' text and notes (so its slide pictures are the static previews used in the Slides panel) and sends commands back over a BroadcastChannel (`presenterBus.ts`). It closes when the show ends. Put it on your own screen and the main window full-screen on the projector.
-
-## Slide grid
-
-Switch the Source and Canvas panes off (strip on the left, or the View menu) and the Slides panel fills the window as a grid of slides: drag to reorder, right-click for the slide menu, double-click a slide to bring the editor back.
-
-## Compilers and runtimes (File > Settings > Compilers & runtimes)
-
-Each language (Python, Node.js, Rust, Go, Java, C, C++) can point at its own program, or at the folder that holds it (for example a JDK's `bin`). An empty row uses PATH. The setting is about this computer, so it is not stored in the deck.
-The dot beside a language turns green when it is found. ITSD checks again when a path changes, when you click back into the window, and on **Detect again**, and it re-reads PATH when it does, so installing a compiler while ITSD is open needs no restart.
-Formatting (Format button) still uses the formatters found on PATH.
-
-**Languages a `run` block can use:** python (py), node (js, javascript), typescript (ts, via Deno), rust (rs), go, zig, odin, c, cpp (c++), java, dart, ruby (rb), lua, php, perl (pl), julia (jl), haskell (hs, via runghc), bash (sh), sql (sqlite, runs in SQLite's shell on an in-memory database). Each needs its toolchain installed (or pointed to in Settings). To add another language: one line in `src/langs.ts` and one in `LANGS` in `src-tauri/src/lib.rs`.
-
-## Bundles (for the Player)
-
-A `.zip` that holds one `.itsd` deck (the shallowest one is used) and any files it names, at the same relative paths (`assets/cat.png`, sounds, video, fonts, a `style:` css). Made by File > Package for phone. File names are matched ignoring case, and as a last resort by bare file name.
-
 ## Looks: styling any block
 
 One line above a block, in the same stack as `<!-- @center -->`, `<!-- @ x= y= -->` and `<!-- @on ... -->`:
@@ -758,5 +720,9 @@ One line, no closing `:::`. The pictures are the file names (or `images="a.jpg, 
 - `mode=loop` pic 1, then 2, then 3, then 1 again (default). `random`: a random picture each time, never the one showing. `staggered` (or `staggered-loop`): `cells=3` frames at once; every `every` seconds the next frame, left to right, changes to its next picture, forever. `once`: plays through and stops on the last.
 - `every` seconds between changes (default 3; staggered 1.2). `fade` seconds a change takes (0.8). `effect` = `fade`, `slide`, `slideup`, `zoom`, `blur`, `flip`, `wipe`, `iris`, `none` or `random` (a different one each change).
 - `fit=cover` (fill the frame) or `contain`. Staggered layout: `cells`, `cols`, `gap`. `ratio=16/9` is the shape while the block flows; once it is placed it fills its box.
-- `shuffle` starts in a random order. `paused` (or `autoplay=false`) waits for a button: give it `id=gallery` and use the actions `start gallery` / `stop gallery`.
+- `pan` slowly zooms each picture while it shows (off automatically when the system asks for reduced motion). `shuffle` starts in a random order. `paused` (or `autoplay=false`) waits for a button: give it `id=gallery` and use the actions `start gallery` / `stop gallery`.
 - It is an ordinary block: place, size, rotate and layer it in the Visual view, and put a look above it (`<!-- @look polaroid -->`). Pictures animate in the editor too (they are silent).
+
+### Phone Player, `.itsdpak` and `.zip`
+
+Looks and slideshows are plain text, so they travel with the deck. **File > Export > ITSD package (.itsdpak)** (or a `.zip` of the same layout) includes every slideshow picture, because pictures are found by their file names. The package's `itsd.json` lists the features a deck uses (`"features": ["look", "slideshow"]`). The Phone Player draws looks and plays slideshows from the package. An older ITSD ignores a `<!-- @look -->` line (it is an ordinary comment) and shows a `::: slideshow` line as text, so update the Player before sharing such a deck.

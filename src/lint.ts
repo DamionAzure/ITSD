@@ -68,7 +68,7 @@ export function lint(text: string, deck: Deck): Problem[] {
       if (flags.has("run") && !RUNNERS.has(lang)) out.push({ line: n, message: `No runner for "${lang}"`, severity: "warning" });
     }
     let fenceCh: string | null = null;
-    for (let n = s.line; n < end; n++) { const mi = lines[n].match(/^:::\s*(video|audio)\b.*\bid=(\w+)/); if (mi) ids.add(mi[2]); }
+    for (let n = s.line; n < end; n++) { const mi = lines[n].match(/^:::\s*(video|audio|slideshow)\b.*\bid=(\w+)/); if (mi) ids.add(mi[2]); }
     for (let n = s.line; n < end; n++) {
       const f = lines[n].match(/^\s*(`{3,}|~{3,})/);
       if (f) { fenceCh = fenceCh ? (f[1][0] === fenceCh ? null : fenceCh) : f[1][0]; continue; }

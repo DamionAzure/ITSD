@@ -73,11 +73,18 @@ export function openBytes(name: string, bytes: Uint8Array): Opened {
   return { name: d.split("/").pop()!.replace(/\.itsd$/i, ""), text: new TextDecoder().decode(map.get(d)!), files: map, dir: d.includes("/") ? d.slice(0, d.lastIndexOf("/")) : "" };
 }
 
+/** What a deck uses that older players don't know (written into the package manifest; an older Player just ignores a look line and shows a slideshow as text). */
+export function featuresOf(text: string): string[] {
+  const f: string[] = [];
+  if (/^\s*<!--\s*@look\b/m.test(text)) f.push("look");
+  if (/^:::\s*slideshow\b/m.test(text)) f.push("slideshow");
+  return f;
+}
 /** Desktop side: the deck plus every file it names, as one .zip. `read` returns a file's bytes or undefined. */
 export async function packBundle(name: string, text: string, refs: string[], read: (ref: string) => Promise<Uint8Array | undefined>): Promise<{ zip: Uint8Array; missing: string[] }> {
   const out: Record<string, Uint8Array> = {
     [`${name}.itsd`]: new TextEncoder().encode(text),
-    "itsd.json": new TextEncoder().encode(JSON.stringify({ format: "itsdpak", version: 1, deck: `${name}.itsd` }) + "\n"),
+    "itsd.json": new TextEncoder().encode(JSON.stringify({ format: "itsdpak", version: 1, deck: `${name}.itsd`, features: featuresOf(text) }) + "\n"),
   }, missing: string[] = [];
   for (const r of refs) {
     if (/^[a-z]+:\/\//i.test(r) || /^[A-Za-z]:[\\/]/.test(r) || r.startsWith("/")) { missing.push(r); continue; } // absolute paths don't travel

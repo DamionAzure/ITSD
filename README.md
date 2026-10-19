@@ -1,4 +1,4 @@
-﻿# ITSD — Interactive Tauri Slide Deck
+# ITSD — Interactive Tauri Slide Deck
 
 Slides written as plain text, with code you can **run during the talk**. Type Markdown, add a `run` after a code fence's language,
 press F5. A desktop app (Tauri 2 + React) that works offline.
@@ -8,6 +8,7 @@ press F5. A desktop app (Tauri 2 + React) that works offline.
 - **Effects** from [React Bits](https://reactbits.dev), [Magic UI](https://magicui.design), [Cult UI](https://www.cult-ui.com),
   [Kokonut UI](https://kokonutui.com), [Eldora UI](https://www.eldoraui.site), [Motion Primitives](https://motion-primitives.com), [Animata](https://animata.design) and [Aceternity UI](https://ui.aceternity.com), downloaded on request from the **Vendor** menu: animated
   backgrounds (Aurora, Particles…), animated text, and frames or cards around content (electric borders, glow) that can even hold live code.
+- **Looks and slideshows**: one `<!-- @look neon -->` line styles any block (16 presets, fonts, gradients, glass, shapes, filters); `::: slideshow` cycles pictures in loop, random, staggered or once modes with ten change effects. Both travel in `.itsdpak` packages and play in the Phone Player.
 - **Counters and branches**: `::: var` numbers that buttons change (`add score 1`), and branch slides (`<!-- branch: 1 -->`) you open with Ctrl+→, Ctrl+Enter or Ctrl+Space while the normal arrows stay on the main line (inside a branch they step through its slides, then rejoin the main line).
 - **Calculations and rules**: `{{score * 2}}`, `put total = a + b`, and `::: when score >= 10` blocks that run actions when a number crosses a line; a built-in calculator, not JavaScript.
 - **Timers**: `after 2s show answer`, `every 1s sub time 1`, and `::: after` / `::: every` blocks that start with the slide, for reveals and countdowns.
@@ -40,7 +41,7 @@ metadata and are applied when the release workflow builds installers.
 
 ### Android presentation view
 
-ITSD `0.5.2` also targets Android as a presentation-only mobile experience.
+ITSD `0.5.3` also targets Android as a presentation-only mobile experience.
 Android users get the dashboard and can open decks into a touch-friendly
 presentation view; the desktop editing interface is hidden on mobile-sized or
 touch devices. The Android app is locked to landscape orientation and uses immersive
@@ -83,17 +84,6 @@ JavaScript (`js` or `node`) blocks can run locally in the Player. Other code
 blocks need recorded output; leave **Settings > Record runs** enabled and save
 the deck before packaging it. The Player can replay recorded runs without a
 compiler.
-
-## ITSD 0.5.2 release notes
-
-- Added reusable **Looks** for supported blocks, including presets and custom
-  colors, typography, borders, shadows, filters, shapes, and hover effects.
-- Added animated **Slideshows** with loop, random, staggered, and once modes,
-  configurable timing, image fitting, and transition effects.
-- Added Visual inspector controls and documentation for Looks and Slideshows.
-- Expanded scoreboard styling options and dashboard slide previews.
-- Preserved portable `.itsdpak` export and compatibility with existing `.zip`
-  bundles.
 
 1. Create a signing key with `npx tauri signer generate`.
 2. Keep the private key outside the repository (for example, as the

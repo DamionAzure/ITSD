@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { RegCtx } from "./ctx";
+import { DeckCtx, RegCtx } from "./ctx";
 import { useAssetUrl } from "./ImageLayer";
 import { SHOW_EFFECTS, type ShowDef } from "./slideshow";
 
@@ -20,15 +20,19 @@ const RANDOM_POOL = SHOW_EFFECTS.filter((e) => e !== "none" && e !== "random");
 type Layer = { key: number; idx: number; eff?: string };
 const pickRandom = (n: number, avoid: number[]) => { const ok = Array.from({ length: n }, (_, i) => i).filter((i) => !avoid.includes(i)); const pool = ok.length ? ok : Array.from({ length: n }, (_, i) => i); return pool[Math.floor(Math.random() * pool.length)]; };
 
-function Frame({ src, fit, eff, leaving, dur }: { src: string; fit: string; eff?: string; leaving: boolean; dur: number }) {
-  const url = useAssetUrl(src), el = useRef<HTMLDivElement>(null);
+function Frame({ src, fit, eff, leaving, dur, pan }: { src: string; fit: string; eff?: string; leaving: boolean; dur: number; pan: number }) {
+  const url = useAssetUrl(src), el = useRef<HTMLDivElement>(null), img = useRef<HTMLImageElement>(null);
+  useEffect(() => { if (url && pan > 0) img.current?.animate([{ scale: "1" }, { scale: "1.1" }], { duration: pan * 1000, easing: "linear", fill: "both" }); }, [url]); // slow zoom (Ken Burns)
   useEffect(() => { if (eff && eff !== "none" && ENTER[eff] && dur > 0) el.current?.animate(ENTER[eff], { duration: dur * 1000, easing: "ease", fill: "both" }); }, []); // only a frame that arrives by a change animates
   useEffect(() => { if (leaving && eff && EXIT[eff] && dur > 0) el.current?.animate(EXIT[eff], { duration: dur * 1000, easing: "ease", fill: "both" }); }, [leaving]);
-  return <div className="sh-frame" ref={el}>{url ? <img src={url} alt="" draggable={false} style={{ objectFit: fit as CSSProperties["objectFit"] }} /> : <span>{src}</span>}</div>;
+  return <div className="sh-frame" ref={el}>{url ? <img ref={img} src={url} alt="" draggable={false} style={{ objectFit: fit as CSSProperties["objectFit"] }} /> : <span>{src}</span>}</div>;
 }
 
+const calmMotion = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 function Show({ def, srcs }: { def: ShowDef; srcs: string[] }) {
-  const reg = useContext(RegCtx);
+  const reg = useContext(RegCtx), { assets } = useContext(DeckCtx), calm = calmMotion();
+  useEffect(() => { srcs.forEach((s) => assets.url(s)); }, [srcs.join("|")]); // load every picture up front, so a change never shows an empty frame
   const n = srcs.length, cells = def.mode === "staggered" ? Math.max(1, Math.min(def.cells, n)) : 1;
   const keyc = useRef(0);
   const shown = useRef<number[]>(Array.from({ length: cells }, (_, i) => (def.mode === "random" && cells === 1 ? Math.floor(Math.random() * n) : i % n)));
@@ -37,6 +41,7 @@ function Show({ def, srcs }: { def: ShowDef; srcs: string[] }) {
   const [playing, setPlaying] = useState(def.autoplay);
   const root = useRef<HTMLDivElement>(null);
 
+  const fadeS = calm ? Math.min(def.fade, 0.3) : def.fade, panS = def.pan && !calm ? def.every * (def.mode === "staggered" ? cells : 1) + fadeS : 0;
   const tick = () => {
     const c = def.mode === "staggered" ? rr.current++ % cells : 0, cur = shown.current[c];
     let next: number;
@@ -46,9 +51,9 @@ function Show({ def, srcs }: { def: ShowDef; srcs: string[] }) {
     else next = (cur + 1) % n;
     if (next === cur) return;
     shown.current[c] = next;
-    const eff = def.effect === "random" ? RANDOM_POOL[Math.floor(Math.random() * RANDOM_POOL.length)] : def.effect, key = ++keyc.current;
+    const eff = calm ? "fade" : def.effect === "random" ? RANDOM_POOL[Math.floor(Math.random() * RANDOM_POOL.length)] : def.effect, key = ++keyc.current;
     setLayers((prev) => prev.map((l, k) => (k === c ? [...l.slice(-1), { key, idx: next, eff }] : l)));
-    window.setTimeout(() => setLayers((prev) => prev.map((l, k) => (k === c && l.length > 1 && l[l.length - 1].key === key ? l.slice(-1) : l))), def.fade * 1000 + 80);
+    window.setTimeout(() => setLayers((prev) => prev.map((l, k) => (k === c && l.length > 1 && l[l.length - 1].key === key ? l.slice(-1) : l))), fadeS * 1000 + 80);
   };
   const latest = useRef(tick); latest.current = tick;
   useEffect(() => { if (n < 2 || !playing) return; const id = window.setInterval(() => latest.current(), def.every * 1000); return () => window.clearInterval(id); }, [playing, n, def.every]);
@@ -63,7 +68,7 @@ function Show({ def, srcs }: { def: ShowDef; srcs: string[] }) {
     <div className={`sh sh-${def.mode}`} ref={root} style={grid} data-playing={playing ? "1" : undefined}>
       {layers.map((ls, c) => (
         <div className="sh-cell" key={c}>
-          {ls.map((l, k) => <Frame key={l.key} src={srcs[l.idx]} fit={def.fit} eff={l.eff} leaving={k < ls.length - 1} dur={def.fade} />)}
+          {ls.map((l, k) => <Frame key={l.key} src={srcs[l.idx]} fit={def.fit} eff={l.eff} leaving={k < ls.length - 1} dur={fadeS} pan={panS} />)}
         </div>
       ))}
     </div>
