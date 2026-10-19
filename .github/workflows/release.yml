@@ -46,7 +46,16 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: ITSD ${{ github.ref_name }}
-          releaseBody: See the release assets for installers and update metadata.
+          releaseBody: |
+            ## ITSD 0.5.2
+
+            - Added reusable Looks with presets and custom styling for supported blocks.
+            - Added animated Slideshows with loop, random, staggered, and once modes.
+            - Added configurable slideshow timing, image fitting, and transition effects.
+            - Expanded scoreboard styling and dashboard slide previews.
+            - Preserved `.itsdpak` export and compatibility with existing `.zip` bundles.
+
+            See the release assets for installers, the Android APK, and updater metadata.
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
