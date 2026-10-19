@@ -2,7 +2,9 @@ import { useContext, useEffect, useLayoutEffect, useRef, useSyncExternalStore, t
 import { monaco, monacoLang, MONO } from "./monaco";
 import { DeckCtx, type TraceData } from "./ctx";
 import { SAMPLE_TRACE, parseTraceDef, type TraceDef } from "./traceBlock";
-import { boxStyle, fmtVal, opColor, opName } from "./traceStyle";
+import { fmtVal, opColor, opName } from "./traceStyle";
+import { lookStyle } from "./look";
+const boxStyle = (a: Record<string, string>) => lookStyle(a, { size: false }); // a trace part's own `size` is its text multiplier (--ts), not a font size
 
 // The trace's pieces. Each is its own slide element (placed, sized, rotated and styled on its own) and they stay in step through a shared player.
 // `over` hands a part a run directly (the generated trace slide), instead of looking it up from `def.from`.

@@ -1,5 +1,6 @@
 import { useContext, useSyncExternalStore, type CSSProperties } from "react";
 import { DeckCtx } from "./ctx";
+import { lookClass, lookStyle } from "./look";
 import { lightness, type Backdrop as Back, type ImageDef } from "./images";
 
 /** The object URL for a picture file, re-rendering the caller when it finishes loading. */
@@ -29,7 +30,7 @@ export function inkStyle(back: Back): CSSProperties | undefined {
 function Pic({ d, n, id }: { d: ImageDef; n: number; id?: string }) {
   const url = useAssetUrl(d.src);
   return (
-    <div className="pic" data-pn={n} data-id={id} style={{ left: `${d.x}%`, top: `${d.y}%`, width: `${d.w}%`, height: `${d.h}%`, ...(d.z !== undefined ? { zIndex: 10 + d.z } : null), ...(d.rot ? { rotate: `${d.rot}deg` } : null) }}>
+    <div className={"pic" + (d.look ? " " + lookClass(d.look) : "")} data-pn={n} data-id={id} style={{ ...lookStyle(d.look), left: `${d.x}%`, top: `${d.y}%`, width: `${d.w}%`, height: `${d.h}%`, ...(d.z !== undefined ? { zIndex: 10 + d.z } : null), ...(d.rot ? { rotate: `${d.rot}deg` } : null) }}>
       {url ? <img src={url} alt={d.alt} draggable={false} /> : <span>{d.src}</span>}
     </div>
   );

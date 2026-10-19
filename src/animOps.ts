@@ -19,8 +19,8 @@ export function objects(text: string, id: number): ObjInfo[] {
   return toBlocks(src).map((b, index) => {
     const lab = b.kind === "html" ? plainText(b.html).replace(/\s+/g, " ").trim().slice(0, 34) || "Text"
       : b.kind === "run" ? `Code${b.name ? `: ${b.name}` : ""}` : b.kind === "btn" ? `Button: ${b.label}` : b.kind === "img" ? `Picture: ${b.def.src.split("/").pop()}`
-      : b.kind === "input" ? "Input box" : b.kind === "media" ? "Video / audio" : b.kind === "flash" ? "Flash region" : b.kind === "trace" ? "Trace" : "Effect";
-    return { index, label: lab, id: b.id, top: Math.min(b.marker ?? b.line, b.alignLine ?? b.line, b.dir ?? b.line) };
+      : b.kind === "input" ? "Input box" : b.kind === "media" ? "Video / audio" : b.kind === "show" ? "Slideshow" : b.kind === "flash" ? "Flash region" : b.kind === "trace" ? "Trace" : "Effect";
+    return { index, label: lab, id: b.id, top: Math.min(b.marker ?? b.line, b.alignLine ?? b.line, b.dir ?? b.line, b.lookLine ?? b.line) };
   });
 }
 /** The object that contains (or is nearest above) a 0-based line of the whole deck, for "the block at the cursor". */

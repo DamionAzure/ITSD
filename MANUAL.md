@@ -1,4 +1,4 @@
-# ITSD Manual
+﻿# ITSD Manual
 
 *The short version for people who don't read READMEs.* Slides are plain text. You write them, run code on them, and present them.
 This page is also in the app: **Help > Manual**.
@@ -483,6 +483,12 @@ Team names can't contain `_`, `*`, `#` or `>`. The video is streamed from disk, 
 Insert > **Video…** (or **Audio…**) and choose the file. It is copied into the `assets` folder next to your deck and a block is added; drag it in the Visual view like anything else.
 Add `autoplay` to the line so it starts when you reach the slide in Present, `loop` to repeat, `muted` for silent video. Give it `id=intro` and a button can `start intro` / `stop intro`.
 Big files are fine: they play straight from disk.
+
+## I want pictures to change by themselves
+
+Use **Insert > Slideshow…** and choose several pictures. ITSD copies them into the deck's `assets` folder and inserts a `::: slideshow` block. By default, pictures loop every three seconds with a fade. In the Visual inspector you can choose loop, random, staggered, or once playback; change effects such as slide, zoom, blur, flip, wipe, and iris; reorder or add pictures; and pause or start a named slideshow from a button.
+
+You can style a slideshow or any other supported block with a `<!-- @look neon -->` line above it. The Visual inspector includes presets such as card, glass, neon, paper, and polaroid, plus custom colors, spacing, borders, shadows, filters, and hover effects. The complete syntax is documented in [FORMAT.md](FORMAT.md).
 
 ## I want more logic in my deck (scripting)
 

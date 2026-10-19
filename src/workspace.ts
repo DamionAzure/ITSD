@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { parseDeck } from "./itsd";
 
 export interface Entry { name: string; path: string; dir: boolean; modified: number; size: number }
-export interface WsInfo { install_dir: string; resources: string; workspace: string; version: string; templates: Entry[]; examples: Entry[] }
+export interface WsInfo { install_dir: string; resources: string; workspace: string; version: string; publisher: string; templates: Entry[]; examples: Entry[] }
 
 const root = (r: string) => r || null;
 export const wsInit = (workspace: string) => invoke<WsInfo>("workspace_init", { root: root(workspace) });
@@ -14,11 +14,11 @@ export const wsNew = (workspace: string, template: string | null, name: string) 
 export const wsReveal = (workspace: string, path: string) => invoke<void>("workspace_reveal", { root: root(workspace), path });
 
 /** What a deck card shows: its title, its first slide's heading and first lines, and the slide count. */
-export interface Summary { title: string; heading: string; lines: string[]; slides: number }
+export interface Summary { title: string; heading: string; lines: string[]; slides: number; /** the first slide's own source, drawn as the card's picture */ first: string; align?: string }
 export function summarize(text: string, fallback: string): Summary {
   const d = parseDeck(text), first = (d.slides[0]?.src ?? "").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("<!--") && !l.startsWith(":::"));
   const h = first.find((l) => l.startsWith("#")) ?? "";
-  return { title: d.meta.title || h.replace(/^#+\s*/, "") || fallback, heading: h.replace(/^#+\s*/, ""), lines: first.filter((l) => l !== h).slice(0, 4).map((l) => l.replace(/^[-*]\s+/, "• ")), slides: d.slides.length };
+  return { title: d.meta.title || h.replace(/^#+\s*/, "") || fallback, heading: h.replace(/^#+\s*/, ""), lines: first.filter((l) => l !== h).slice(0, 4).map((l) => l.replace(/^[-*]\s+/, "• ")), slides: d.slides.length, first: d.slides[0]?.src ?? "", align: d.meta.align };
 }
 
 // ---- recent decks ----

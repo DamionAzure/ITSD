@@ -16,12 +16,27 @@ interface Props {
   autoplay?: boolean;  // start the replay by itself
   keys?: boolean;      // while presenting, the Next key steps one update before moving on to the next slide
   live?: boolean;      // scores are deck variables (one per team) that buttons change: `add Alpha 3`. The log only supplies the teams
+  // look (see FORMAT.md): every one is optional; a preset sets the defaults and these override it
+  look?: string; accent?: string; bg?: string; rowbg?: string; text?: string; border?: string; bar?: string; gain?: string; colors?: string[];
+  teamcolor?: string; bars?: string; rank?: string; hot?: string; leader?: string; font?: string; case?: string; titlealign?: string; shadow?: string;
+  size?: number; rowh?: number; gap?: number; radius?: number; pad?: number; width?: number; bw?: number; top?: number; anim?: number;
+  prefix?: string; suffix?: string; head?: boolean; clock?: boolean; delta?: boolean; step?: boolean; controls?: string;
 }
 
 const label = (e: Pick<Ev, "op" | "v">) => (e.op === "add" ? (e.v >= 0 ? `+${e.v}` : `${e.v}`) : `= ${e.v}`);
 const SPEEDS = [0.5, 1, 2, 4, 8];
 
-export default function Scoreboard({ children, src, title, video, offset = 0, speed: sp = 1, start = "begin", sorted = true, autoplay = false, keys = false, live = false }: Props) {
+const FONTS: Record<string, string> = {
+  sans: "system-ui, 'Segoe UI', sans-serif", serif: "var(--serif, Georgia, serif)", mono: "var(--mono, ui-monospace, monospace)",
+  rounded: "'Nunito', 'Varela Round', ui-rounded, system-ui, sans-serif", condensed: "'Arial Narrow', 'Roboto Condensed', 'Segoe UI', sans-serif",
+};
+const LOOKS = ["classic", "minimal", "broadcast", "neon", "retro", "glass", "paper"];
+const pos = (v: number | undefined, d: number, min = 0.1, max = 6) => (typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : d);
+
+export default function Scoreboard({ children, src, title, video, offset = 0, speed: sp = 1, start = "begin", sorted = true, autoplay = false, keys = false, live = false,
+  look = "classic", accent, bg, rowbg, text: textColor, border, bar, gain, colors, teamcolor = "bar", bars = "fill", rank: rankStyle = "circle", hot = "border", leader = "badge",
+  font = "default", case: cased = "normal", titlealign = "left", shadow = "none", size, rowh, gap, radius, pad, width, bw, top = 0, anim, prefix = "", suffix = "",
+  head = true, clock: showClock = true, delta: showDelta = true, step: showStep = true, controls = "full" }: Props) {
   const api = useContext(DeckCtx);
   const [file, setFile] = useState<string>();
   useEffect(() => { setFile(undefined); if (src) api.readFile(src).then(setFile).catch(() => setFile("")); }, [src, api]);
@@ -89,33 +104,54 @@ export default function Scoreboard({ children, src, title, video, offset = 0, sp
   const n = snap.rows.length;
   const gone = video && !vurl && missing;
   const warn = board.problems.length && !api.presenting() ? board.problems.slice(0, 2).join(" · ") : "";
-  const style = { "--n": n } as CSSProperties;
+  const shown = top > 0 ? Math.min(n, Math.floor(top)) : n; // top=3: only the first three rows are visible
+  const style = { "--n": shown } as CSSProperties;
+  const lk = LOOKS.includes(look) ? look : "classic";
+  const v: Record<string, string | number> = {};
+  if (accent) v["--sb-accent"] = accent; if (bg) v["--sb-bg"] = bg; if (rowbg) v["--sb-row-bg"] = rowbg; if (textColor) v["--sb-text"] = textColor;
+  if (border) v["--sb-line"] = border; if (bar) v["--sb-bar"] = bar; if (gain) v["--sb-gain"] = gain;
+  if (size !== undefined) v["--sz"] = pos(size, 1, 0.3, 4); if (rowh !== undefined) v["--rh"] = pos(rowh, 1, 0.4, 3); if (gap !== undefined) v["--gp"] = pos(gap, 1, 0, 8);
+  if (radius !== undefined) v["--rd"] = pos(radius, 1, 0, 8); if (pad !== undefined) v["--pd"] = pos(pad, 1, 0, 6); if (bw !== undefined) v["--bw"] = pos(bw, 1, 0, 8);
+  if (anim !== undefined) v["--an"] = pos(anim, 1, 0, 6);
+  if (width !== undefined) v.width = `${pos(width, 100, 20, 100)}%`;
+  if (font !== "default" && FONTS[font]) v["--sb-font"] = FONTS[font];
+  const cls = ["sb", `look-${lk}`, `rk-${rankStyle}`, `bars-${bars}`, `hot-${hot}`, `tc-${colors?.length ? teamcolor : "off"}`, `ld-${leader}`, cased === "upper" ? "upper" : "", shadow !== "none" ? `sh-${shadow}` : "", anim === 0 ? "noanim" : ""].filter(Boolean).join(" ");
+  const fmt = (x: number) => `${prefix}${x}${suffix}`;
+  const tcol = (team: string) => colors?.length ? colors[board.teams.indexOf(team) % colors.length] : undefined;
 
   const board_ = (
     <div className="sb-main">
-      <div className="sb-head">
-        <h3>{title ?? board.title ?? "Scoreboard"}</h3>
-        <span className="sb-clock">{fmtTime(clock)}</span>
-      </div>
+      {(head || showClock) && <div className={"sb-head ta-" + titlealign}>
+        {head && <h3>{title ?? board.title ?? "Scoreboard"}</h3>}
+        {showClock && !live && <span className="sb-clock">{fmtTime(clock)}</span>}
+      </div>}
       {n === 0 ? (
         <p className="sb-empty">No score lines yet. Write one update per line inside the block, like <code>0:45 Alpha +3</code>.</p>
       ) : (
         <ol className="sb-rows" style={style}>
           {snap.rows.map((r) => (
-            <li key={r.team} className={(last?.team === r.team ? "hot " : "") + (r.rank === 1 && r.score > 0 ? "lead" : "")} style={{ "--pos": sort ? r.pos : board.teams.indexOf(r.team), "--fill": r.score > 0 ? r.score / snap.max : 0 } as CSSProperties}>
+            <li key={r.team} className={(last?.team === r.team ? "hot " : "") + (r.rank === 1 && r.score > 0 ? "lead " : "") + ((sort ? r.pos : board.teams.indexOf(r.team)) >= shown ? "sb-out" : "")}
+              style={{ "--pos": sort ? r.pos : board.teams.indexOf(r.team), "--fill": r.score > 0 ? r.score / snap.max : 0, ...(tcol(r.team) ? { "--tc": tcol(r.team) } : null) } as CSSProperties}>
               <i className="sb-bar" />
-              <span className="sb-rank">{r.rank}</span>
-              <span className="sb-team">{r.team}</span>
-              {last?.team === r.team && <span className="sb-delta" key={snap.idx}>{label(last)}</span>}
-              <b className="sb-score" key={r.score}>{r.score}</b>
+              {rankStyle !== "none" && <span className="sb-rank">{r.rank}</span>}
+              <span className="sb-team">{leader === "crown" && r.rank === 1 && r.score > 0 && <em className="sb-crown">♛</em>}{r.team}</span>
+              {showDelta && last?.team === r.team && <span className="sb-delta" key={snap.idx}>{label(last)}</span>}
+              <b className="sb-score" key={r.score}>{fmt(r.score)}</b>
             </li>
           ))}
         </ol>
       )}
       {warn && <p className="sb-warn">{warn}</p>}
-      <div className="sb-ctl">
+      {controls !== "none" && <div className="sb-ctl">
         {live && <button title="Set every team back to 0" onClick={() => board.teams.forEach((n) => api.setInput(varName(n), "0"))}>Reset</button>}
-        {!video && !live && (
+        {!video && !live && controls === "min" && (
+          <>
+            <button title="Previous update" onClick={() => { setPlaying(false); goto(prevTime(board, clock)); }}>◀</button>
+            <button className="primary" title="Play the replay" onClick={() => setPlaying((p) => !p)}>{playing ? "Pause" : "Play"}</button>
+            <button title="Next update" disabled={!more} onClick={() => { setPlaying(false); const x = nextTime(board, clock); if (x !== undefined) goto(x); }}>▶</button>
+          </>
+        )}
+        {!video && !live && controls === "full" && (
           <>
             <button title="Back to the start" onClick={() => { setPlaying(false); goto(0); }}>⏮</button>
             <button title="Previous update" onClick={() => { setPlaying(false); goto(prevTime(board, clock)); }}>◀</button>
@@ -126,15 +162,15 @@ export default function Scoreboard({ children, src, title, video, offset = 0, sp
             <select value={speed} onChange={(e) => setSpeed(+e.target.value)} aria-label="Speed">{[...new Set([...SPEEDS, sp])].sort((a, b) => a - b).map((s) => <option key={s} value={s}>{s}x</option>)}</select>
           </>
         )}
-        <button aria-pressed={sort} title="Rows slide into rank order, or stay in team order" onClick={() => setSort((s) => !s)}>{sort ? "Sorted" : "Unsorted"}</button>
-        <span className="sb-step">{live ? "live" : <>{snap.idx + 1} / {board.events.length}{keys && !video && more ? " · Next ▸" : ""}</>}</span>
-      </div>
+        {controls === "full" && <button aria-pressed={sort} title="Rows slide into rank order, or stay in team order" onClick={() => setSort((s) => !s)}>{sort ? "Sorted" : "Unsorted"}</button>}
+        {showStep && <span className="sb-step">{live ? "live" : <>{snap.idx + 1} / {board.events.length}{keys && !video && more ? " · Next ▸" : ""}</>}</span>}
+      </div>}
     </div>
   );
 
-  if (!video) return <div className="sb">{board_}</div>;
+  if (!video) return <div className={cls} style={v as CSSProperties}>{board_}</div>;
   return (
-    <div className="sb sb-split">
+    <div className={cls + " sb-split"} style={v as CSSProperties}>
       <div className="sb-video">
         {vurl ? <video ref={vid} src={vurl} controls playsInline preload="auto" onError={onError} />
           : <p className="sb-empty">{gone ? <>Can't read <code>{video}</code>. Put the video next to the deck (for example in <code>assets/</code>) and check the name.</> : <>Loading <code>{video}</code>…</>}</p>}

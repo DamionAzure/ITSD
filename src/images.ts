@@ -7,7 +7,7 @@
 // Backgrounds live in the slide's leading comment: `<!-- bg: #1b3a4b; bgimage: assets/sky.jpg; bgdim: 30 -->`.
 import { parseDeck } from "./itsd";
 
-export interface ImageDef { src: string; x: number; y: number; w: number; h: number; alt: string; rot?: number; z?: number }
+export interface ImageDef { src: string; x: number; y: number; w: number; h: number; alt: string; rot?: number; z?: number; look?: Record<string, string> }
 
 export const round2 = (n: number) => Math.round(n * 100) / 100;
 const num = (v: string | undefined) => { const n = parseFloat(v ?? ""); return Number.isFinite(n) ? n : undefined; };

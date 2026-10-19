@@ -1,4 +1,4 @@
-# ITSD — Interactive Tauri Slide Deck
+﻿# ITSD — Interactive Tauri Slide Deck
 
 Slides written as plain text, with code you can **run during the talk**. Type Markdown, add a `run` after a code fence's language,
 press F5. A desktop app (Tauri 2 + React) that works offline.
@@ -40,7 +40,7 @@ metadata and are applied when the release workflow builds installers.
 
 ### Android presentation view
 
-ITSD `0.5.0` also targets Android as a presentation-only mobile experience.
+ITSD `0.5.2` also targets Android as a presentation-only mobile experience.
 Android users get the dashboard and can open decks into a touch-friendly
 presentation view; the desktop editing interface is hidden on mobile-sized or
 touch devices. The Android app is locked to landscape orientation and uses immersive
@@ -83,6 +83,17 @@ JavaScript (`js` or `node`) blocks can run locally in the Player. Other code
 blocks need recorded output; leave **Settings > Record runs** enabled and save
 the deck before packaging it. The Player can replay recorded runs without a
 compiler.
+
+## ITSD 0.5.2 release notes
+
+- Added reusable **Looks** for supported blocks, including presets and custom
+  colors, typography, borders, shadows, filters, shapes, and hover effects.
+- Added animated **Slideshows** with loop, random, staggered, and once modes,
+  configurable timing, image fitting, and transition effects.
+- Added Visual inspector controls and documentation for Looks and Slideshows.
+- Expanded scoreboard styling options and dashboard slide previews.
+- Preserved portable `.itsdpak` export and compatibility with existing `.zip`
+  bundles.
 
 1. Create a signing key with `npx tauri signer generate`.
 2. Keep the private key outside the repository (for example, as the

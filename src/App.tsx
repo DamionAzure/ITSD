@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { MEDIA_EXT, VIDEO_EXT, AUDIO_EXT, isVideo } from "./mediaDef";
+import { PRESET_NAMES } from "./look";
+import { newShow } from "./slideshow";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { parseDeck, type Deck, type Slide } from "./itsd";
 import { DeckCtx, type DeckApi, type TraceData } from "./ctx";
@@ -346,6 +348,7 @@ export default function App() {
     const r = await open({ multiple: true, filters: [{ name: "Images", extensions: IMG_EXT }] });
     return importPaths(r == null ? [] : Array.isArray(r) ? r : [r]);
   };
+  const addSlideshow = async () => { const refs = await pickImages(); if (refs.length) put(newShow(refs)); };
   const commit = (next: string) => { if (next !== live.current.text) editor.current?.replaceAll(next); };
   const media = useMemo(() => {
     const used = deck.slides.flatMap((s) => [...scanImages(s.src).map((i) => i.def.src), ...(backdropOf(s.opts).image ? [backdropOf(s.opts).image!] : [])]);
@@ -609,7 +612,8 @@ export default function App() {
       { label: "Script", sub: [
         { label: "Event rule (on key / enter / change)", run: () => insert("on") }, { label: "Macro (reusable actions)", run: () => insert("macro") }, { label: "JavaScript block", run: () => insert("script") }] },
       { label: "Trace (separate parts)", run: () => insert("trace") }, { label: "Trace (one block)", run: () => insert("traceOne") },
-      { label: "Video…", run: () => void addMedia("video") }, { label: "Audio…", run: () => void addMedia("audio") }, { label: "Input box", run: () => insert("input") }, { label: "Speaker notes", run: () => insert("notes") }, { label: "Hidden source", run: () => insert("source") }, "-",
+      { label: "Video…", run: () => void addMedia("video") }, { label: "Audio…", run: () => void addMedia("audio") }, { label: "Slideshow…", run: () => void addSlideshow() }, { label: "Input box", run: () => insert("input") }, { label: "Speaker notes", run: () => insert("notes") }, { label: "Hidden source", run: () => insert("source") }, "-",
+      ...(live.current.mode !== "visual" ? [{ label: "Look (style the next block)", sub: PRESET_NAMES.map((n): Item => ({ label: n[0].toUpperCase() + n.slice(1), run: () => put(`<!-- @look ${n} -->\n`) })) } as Item] : []),
       { label: "Action (on Next)", run: () => put("<!-- @on next: rotate this 90 -> fade this 0.5 -->\n") },
       { label: "Flash region", sub: [
         { label: "Starts every time I arrive", run: () => insertFlash("new-slide") }, { label: "Starts the first time only", run: () => insertFlash("at-start") },

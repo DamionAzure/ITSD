@@ -22,10 +22,13 @@ import { MediaBlock } from "./MediaBlock";
 import { MEDIA_LINE, parseMedia, type MediaDef } from "./mediaDef";
 import { TRACE_LINE, traceOf, type TraceDef } from "./traceBlock";
 import { parseFx, readWrap, splitParts, type FxDef } from "./modules/fxEdit";
+import { lookClass, lookStyle, parseLook, type LookAttrs } from "./look";
+import { Slideshow } from "./SlideshowView";
+import { SHOW_LINE, parseShow, type ShowDef } from "./slideshow";
 
 // `line`/`end` locate the block in the slide's source; `at` + `marker` are set when the author dragged it out of the text flow.
 // `align`/`alignLine` come from a `<!-- @center -->` line above the block; `alignLine` lets the Visual view delete it with the block.
-interface Meta { line: number; end: number; at?: Place; marker?: number; align?: string; alignLine?: number; id?: string; ons?: On[]; dir?: number; cond?: string }
+interface Meta { line: number; end: number; at?: Place; marker?: number; align?: string; alignLine?: number; id?: string; ons?: On[]; dir?: number; cond?: string; look?: LookAttrs; lookLine?: number }
 export type Block = Meta & (
   | { kind: "html"; html: string }
   | { kind: "run"; lang: string; text: string; name?: string }
@@ -35,12 +38,13 @@ export type Block = Meta & (
   | { kind: "flash"; spec: FlashSpec }
   | { kind: "trace"; def: TraceDef }
   | { kind: "media"; def: MediaDef }
+  | { kind: "show"; def: ShowDef }
   | { kind: "fx"; fx: FxDef }
   | { kind: "wrap"; fx: FxDef; md: string });
 type Raw = Block extends infer B ? (B extends Meta ? Omit<B, keyof Meta> : never) : never;
 
 const extLang = (ref: string) =>
-  ({ java: "java", py: "python", c: "c", cpp: "cpp", rs: "rust", go: "go", js: "node" } as Record<string, string>)[ref.split(".").pop() ?? ""] ?? "text";
+  ({ java: "java", py: "python", c: "c", cpp: "cpp", rs: "rust", go: "go", js: "node", ts: "typescript", zig: "zig", odin: "odin", rb: "ruby", lua: "lua", php: "php", pl: "perl", jl: "julia", dart: "dart", hs: "haskell", sh: "bash", sql: "sql" } as Record<string, string>)[ref.split(".").pop() ?? ""] ?? "text";
 
 function markdownBlocks(md: string, start: number): Block[] {
   const toks = marked.lexer(md) as any[];
@@ -69,13 +73,14 @@ export function toBlocks(src: string): Block[] {
   let cond: string | null = null; // a `<!-- if: condition -->` line waiting for the block under it: the block is shown only while the condition holds
   const takeIf = (b: Block) => { if (cond) { b.cond = cond; cond = null; } return b; };
   let dr: { id?: string; ons: On[]; line: number } | null = null; // `<!-- @id x -->` / `<!-- @on next: ... -->` lines waiting for the block under them
-  const takeDir = (b: Block) => { if (dr) { if (dr.id) b.id = dr.id; if (dr.ons.length) b.ons = dr.ons; b.dir = dr.line; dr = null; } return b; };
+  let lk: { a: LookAttrs; line: number } | null = null; // a `<!-- @look neon round=2 -->` line waiting for the block under it
+  const takeDir = (b: Block) => { if (lk) { b.look = lk.a; b.lookLine = lk.line; if (b.kind === "img") b.def = { ...b.def, look: lk.a }; lk = null; } if (dr) { if (dr.id) b.id = dr.id; if (dr.ons.length) b.ons = dr.ons; b.dir = dr.line; dr = null; } return b; };
   const takeAlign = (b: Block) => { if (al) { b.align = al.v; b.alignLine = al.line; al = null; } return takeDir(b); };
   const take = (b: Block) => { if (pending) { b.at = pending.at; b.marker = pending.marker; pending = null; } return takeAlign(b); };
   const push = (b: Raw, line: number, end: number, own = false) => {
     const blk = takeIf({ ...b, line, end } as Block);
     if (!own) out.push(take(blk));
-    else { out.push(b.kind === "flash" ? takeAlign(blk) : b.kind === "img" ? takeDir(blk) : blk); pending = null; if (b.kind === "img") al = null; }
+    else { out.push(b.kind === "flash" ? takeAlign(blk) : b.kind === "img" ? takeDir(blk) : blk); pending = null; if (b.kind === "img") al = null; else if (b.kind !== "flash") lk = null; }
   };
   const flush = () => {
     if (md.length) { const got = markdownBlocks(md.join("\n"), mdStart); if (got.length) { take(got[0]); takeIf(got[0]); } out.push(...got); }
@@ -85,7 +90,8 @@ export function toBlocks(src: string): Block[] {
   for (let i = 0; i < lines.length; i++) {
     const f = lines[i].match(/^\s*(`{3,}|~{3,})/);
     if (f) fence = fence ? (f[1][0] === fence ? null : fence) : f[1][0];
-    if (!fence && /^:::\s*notes\s*$/.test(lines[i])) { flush(); while (i + 1 < lines.length && !/^:::\s*$/.test(lines[i + 1])) i++; i++; continue; }
+    const lkm = !fence && !f ? parseLook(lines[i]) : null;
+    if (lkm) { flush(); lk = { a: lkm, line: i }; continue; }
     const ifm = !fence && !f ? lines[i].match(/^\s*<!--\s*if:\s*(.+?)\s*-->\s*$/) : null;
     if (ifm) { flush(); cond = ifm[1]; continue; }
     const od = !fence && !f ? lines[i].match(ON_LINE) : null, idm = !fence && !f ? lines[i].match(ID_LINE) : null;
@@ -102,9 +108,12 @@ export function toBlocks(src: string): Block[] {
     const med = !fence && !f ? lines[i].match(MEDIA_LINE) : null;
     const mdef = med ? parseMedia(med[1] as "video", med[2]) : null;
     if (mdef) { flush(); push({ kind: "media", def: mdef }, i, i); continue; }
+    const shm = !fence && !f ? lines[i].match(SHOW_LINE) : null, shdef = shm ? parseShow(shm[1]) : null;
+    if (shdef) { flush(); push({ kind: "show", def: shdef }, i, i); continue; }
     const trc = !fence && !f ? lines[i].match(TRACE_LINE) : null;
     if (trc) { flush(); push({ kind: "trace", def: traceOf(trc) }, i, i); continue; }
     if (!fence && /^:::\s*(?:when|after|every|on|macro|script|key)\s+\S/.test(lines[i])) { flush(); while (i + 1 < lines.length && !/^:::\s*$/.test(lines[i + 1])) i++; i++; continue; } // a rule or timer draws nothing; scanWhen / scanTimers read it
+    if (!fence && /^:::\s*notes\s*$/.test(lines[i])) { flush(); while (i + 1 < lines.length && !/^:::\s*$/.test(lines[i + 1])) i++; i++; continue; } // speaker notes draw nothing (notes.ts)
     if (!fence && /^:::\s*var\s+\S/.test(lines[i])) { flush(); continue; } // a variable declaration draws nothing; its default is read by parseDeck
     const inp = !fence && lines[i].match(/^:::\s*input\s+(.*)$/);
     const def = inp ? parseInput(inp[1]) : null;
@@ -171,26 +180,10 @@ export function SlideView({ slide, slideKey, reveal, tools, edits, images, plain
   const al = alignOf(slide.opts.align ?? align); // slide-wide default; a block's own alignment overrides it
   useSyncExternalStore(api.subscribe, api.snapshot); // re-render when an input box changes, so {{name}} text follows it
 
-  // Slides never scroll: if the flowing content is taller than the slide, everything in it (text, code, boxes) shrinks
-  // together by `k` until it fits, and grows back when there is room again.
+  // Slides never scroll and never resize their own content: text, code and boxes keep the size the look gives them, and anything taller
+  // than the slide is clipped at its edge. (An automatic shrink-to-fit used to live here; it fought the set look and made the slide jitter.)
   const box = useRef<HTMLDivElement>(null);
-  const [k, setK] = useState(1);
-  useEffect(() => setK(1), [slide.id]);
-  useLayoutEffect(() => {
-    const el = root.current, bx = box.current; if (!el || !bx) return;
-    const step = () => {
-      const cs = getComputedStyle(el), avail = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), need = bx.offsetHeight;
-      if (avail <= 0 || need <= 0) return;
-      setK((cur) => {
-        const want = Math.max(0.3, Math.min(1, (cur * avail * 0.995) / need));
-        const next = want < cur || (want > cur && need < avail * 0.96) ? want : cur; // only grow when there is real slack
-        return Math.abs(next - cur) < 0.01 ? cur : next;
-      });
-    };
-    step();
-    const ro = new ResizeObserver(step); ro.observe(el); ro.observe(bx);
-    return () => ro.disconnect();
-  }, [slide.id, slide.src]);
+  const k = 1;
 
   useLayoutEffect(() => {
     const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
@@ -357,13 +350,16 @@ export function SlideView({ slide, slideKey, reveal, tools, edits, images, plain
     if (b.cond && api.presenting()) { try { if (!api.holds(b.cond)) return null; } catch { /* a bad condition shows the block; the editor flags it */ } } // show-if: hidden while the condition is false (the editor always shows everything)
     const key = `${slide.id}:${i}`;
     const tag = { "data-blk": i, "data-kind": b.kind, "data-placed": b.at ? "1" : undefined, "data-rot": b.at?.rot ? "1" : undefined, "data-id": b.id ?? (b.kind === "run" ? b.name : undefined), ...(flashAt[i] >= 0 ? { "data-fl": flashAt[i] } : {}) };
-    const place: React.CSSProperties | undefined = b.at ? { left: `${b.at.x}%`, top: `${b.at.y}%`, width: b.at.w !== undefined ? `${b.at.w}%` : undefined, height: b.at.h !== undefined ? `${b.at.h}%` : undefined, ...(b.at.z !== undefined ? { zIndex: 10 + b.at.z } : null), ...(b.at.rot ? { rotate: `${b.at.rot}deg` } : null) } : undefined;
-    const cls = (c = "") => `blk ${c}${b.cond ? " cin" : ""}${b.at ? " abs" : ""}${b.at?.h !== undefined ? " hh" : ""}${b.at?.fit === "scale" ? " sx" : ""}${ac(b)}`.trim();
+    const place0: React.CSSProperties | undefined = b.at ? { left: `${b.at.x}%`, top: `${b.at.y}%`, width: b.at.w !== undefined ? `${b.at.w}%` : undefined, height: b.at.h !== undefined ? `${b.at.h}%` : undefined, ...(b.at.z !== undefined ? { zIndex: 10 + b.at.z } : null), ...(b.at.rot ? { rotate: `${b.at.rot}deg` } : null) } : undefined;
+    const lkS = b.look ? lookStyle(b.look) : undefined; // a look styles the block's own box (a button's look goes on the button itself)
+    const place: React.CSSProperties | undefined = lkS && b.kind !== "btn" ? { ...lkS, ...place0 } : place0;
+    const cls = (c = "") => `blk ${c}${b.cond ? " cin" : ""}${b.at ? " abs" : ""}${b.at?.h !== undefined ? " hh" : ""}${b.at?.fit === "scale" ? " sx" : ""}${b.look ? " " + lookClass(b.look) : ""}${ac(b)}`.trim();
     const sc = (c: React.ReactNode) => (b.at?.fit === "scale" ? <Scaled lw={b.at.lw!}>{c}</Scaled> : c);
     if (b.kind === "run") return <div className={cls()} style={place} key={i} {...tag}>{sc(<CodeBlock editKey={`${slide.id}:${i}`} name={b.name} srcId={slide.id} lang={b.lang} code={b.text} tools={tools} edits={edits} />)}</div>;
-    if (b.kind === "btn") { const acts = b.acts; return <div className={cls("btn")} style={place} key={i} {...tag}><button className={`ibtn ${b.cls ?? ""}`} onClick={() => perform(acts)}>{b.label}</button></div>; }
+    if (b.kind === "btn") { const acts = b.acts; return <div className={cls("btn")} style={place} key={i} {...tag}><button className={`ibtn ${b.cls ?? ""}`} style={lkS} onClick={() => perform(acts)}>{b.label}</button></div>; }
     if (b.kind === "input") { const d = b.def; return <div className={cls("inp")} style={place} key={i} {...tag}><InputBox def={d} onRun={d.run ? () => { reg.get(d.run!)?.run(); } : undefined} /></div>; }
     if (b.kind === "media") { const d = b.def; return <div className={cls("med")} style={place} key={i} {...tag}>{sc(<MediaBlock def={d} />)}</div>; }
+    if (b.kind === "show") return <div className={cls("shw")} style={place} key={i} {...tag}>{sc(<Slideshow def={b.def} />)}</div>;
     if (b.kind === "trace") {
       const d = b.def, Part = d.part ? PART[d.part] : null; // a part is one element; a plain `trace` is all of them in one box
       return <div className={cls("trc" + (d.part ? ` tpart-${d.part}` : ""))} style={place} key={i} {...tag}>{sc(Part ? <Part def={d} /> : <TraceComposite def={d} onSplit={() => api.splitTrace(slide.id, { line: b.line, marker: b.marker, at: b.at })} />)}</div>;
@@ -423,10 +419,13 @@ export const Thumb = memo(function Thumb({ src, align }: { src: string; align?: 
   const back = useMemo(() => backdropOf(opts), [opts]);
   const al = alignOf(opts.align ?? align);
   const thumbNode = (b: Block, i: number) => {
-    const style: React.CSSProperties | undefined = b.at ? { left: `${b.at.x}%`, top: `${b.at.y}%`, width: b.at.w !== undefined ? `${b.at.w}%` : undefined, height: b.at.h !== undefined ? `${b.at.h}%` : undefined, ...(b.at.z !== undefined ? { zIndex: 10 + b.at.z } : null), ...(b.at.rot ? { rotate: `${b.at.rot}deg` } : null) } : undefined;
-    const cls = (c = "") => `blk ${c}${b.at ? " abs" : ""}${b.at?.h !== undefined ? " hh" : ""}${b.at?.fit === "scale" ? " sx" : ""}${ac(b)}`.trim();
+    const style0: React.CSSProperties | undefined = b.at ? { left: `${b.at.x}%`, top: `${b.at.y}%`, width: b.at.w !== undefined ? `${b.at.w}%` : undefined, height: b.at.h !== undefined ? `${b.at.h}%` : undefined, ...(b.at.z !== undefined ? { zIndex: 10 + b.at.z } : null), ...(b.at.rot ? { rotate: `${b.at.rot}deg` } : null) } : undefined;
+    const lkT = b.look && b.kind !== "btn" ? lookStyle(b.look) : undefined;
+    const style: React.CSSProperties | undefined = lkT ? { ...lkT, ...style0 } : style0;
+    const cls = (c = "") => `blk ${c}${b.at ? " abs" : ""}${b.at?.h !== undefined ? " hh" : ""}${b.at?.fit === "scale" ? " sx" : ""}${b.look ? " " + lookClass(b.look) : ""}${ac(b)}`.trim();
     return b.kind === "run" ? <pre className={cls()} style={style} key={i}><code>{b.text}</code></pre>
-      : b.kind === "btn" ? <div className={cls("btn")} style={style} key={i}><span className="ibtn">{b.label}</span></div>
+      : b.kind === "btn" ? <div className={cls("btn")} style={style} key={i}><span className="ibtn" style={b.look ? lookStyle(b.look) : undefined}>{b.label}</span></div>
+      : b.kind === "show" ? <div className={cls("shw")} style={style} key={i}><div className="media thumbmedia">▣ {b.def.srcs.length} pictures · {b.def.mode}</div></div>
       : b.kind === "input" ? <div className={cls("inp")} style={style} key={i}><label className="ibox"><span>{b.def.label}</span><div><input readOnly value={b.def.def} /></div></label></div>
       : b.kind === "flash" ? <div className={cls()} key={i}><div className="flash framed" style={flashBox(b.spec)} /></div>
       : b.kind === "media" ? <div className={cls("med")} style={style} key={i}><div className="media thumbmedia">{b.def.kind === "video" ? "▶ " : "♪ "}{b.def.src.split(/[\\/]/).pop()}</div></div>
