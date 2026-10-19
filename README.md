@@ -23,9 +23,10 @@ You need [Node.js](https://nodejs.org) 18+, [Rust](https://rustup.rs), and Tauri
 (see <https://tauri.app/start/prerequisites/>; on Linux that includes WebKitGTK).
 
 ```sh
-npm install
-npm run tauri dev      # run the app
-npm run tauri build    # make an installer
+pnpm install
+pnpm tauri dev      # run the app
+pnpm tauri build    # make an installer
+# (npm works too: npm install, npm run tauri dev)
 ```
 
 ## Updates
