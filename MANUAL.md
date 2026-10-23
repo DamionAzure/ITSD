@@ -72,9 +72,20 @@ double-click a slide to return to the editor.
 Type `---` on its own line, or press **+ Slide** (it goes after the current slide). In the Slides panel you can also duplicate, delete and **drag to reorder**.
 
 ### …run code
-Add `run` after the language. Languages: `c`, `cpp`, `rust`, `go`, `python`, `java`, `node`. The language's tools must be installed on your computer
-(Python for `python`, a C compiler for `c`, and so on). If the Run button says it can't start, that's why.
+Add `run` after the language. Languages: `python`, `node`, `typescript` (Deno), `rust`, `go`, `zig`, `odin`, `nim`, `c`, `cpp`, `csharp` (.NET 10+), `java`, `kotlin`, `swift`, `dart`, `ruby`, `lua`, `php`, `perl`, `r`, `julia`, `elixir`, `haskell`, `ocaml`, `bash`, `powershell`, `sql` (SQLite). Short names work too (`py`, `js`, `ts`, `rs`, `c++`, `cs`, `rb`, `sh`).
+The language's tools must be installed on your computer (Python for `python`, a C compiler for `c`, Deno for `typescript`, and so on).
+If the Run button is greyed out or says it can't start, that's why: see the next recipe.
 Output is never saved in the file. You can edit the code while presenting; those edits aren't saved either.
+
+### …tell ITSD where a language is installed
+ITSD finds a language by looking on your PATH. If you installed it somewhere else (or just installed it and ITSD can't see it), open **Settings** (Ctrl+,) and go to **Languages**:
+
+- A green dot means ITSD can run it; red means it can't find it. The status bar at the bottom lists the ones that work.
+- **Find** searches PATH and the usual install folders (Program Files, `~/.cargo/bin`, Homebrew, SDKMAN, and so on) and sets the path for you. **Find all missing** does that for every red language at once.
+- **Browse…** lets you pick the program yourself, for example `C:\Tools\zig\zig.exe`. You can also pick (or paste) the **folder** that holds it.
+- **Test** asks the program for its version without changing anything. **Clear** goes back to looking on PATH.
+
+A path you set is used exactly as written. If it doesn't work the row turns red and says so, instead of quietly using a different copy.
 
 ### …let the audience type something in
 Add an input box on its own line:
@@ -96,6 +107,21 @@ run demo
 ```
 One action per line, top to bottom: `set`, `run`, `show`, `hide`, `goto 5`. A block you want to swap into is named ` ```java run id=demo `,
 and hidden reusable code is a fence tagged ` ```python def=py_hello `.
+
+### …put a table on a slide
+Insert > **Table** (or **+ Table**), then type the rows with `|` between the cells:
+
+```
+::: table style=zebra sort=2 dir=desc
+Name | Score
+Ada  | 91
+Bo   | 78
+:::
+```
+`style=` picks the look (plain, zebra, grid, lines, bold, card, neon) and `sort=2` shows the rows ordered by column 2. In the Visual view, click it and the Inspector has the rows and every option.
+
+### …show a table that sorts itself
+Run a block that prints trace lines (see the trace recipe below), then Insert > **Trace table (sorts itself)**. It is the same table, but its rows are the values of the run: press Step or Play on the trace controls and the rows slide into order. Give it the same `style=` as your normal tables so they match, and use `cols="index value bar state"` to pick the columns.
 
 ### …show a trace or animation of an algorithm
 Make your program print lines like `@itsd {"op":"compare","a":[3,1,2],"hl":[0,1]}`. A scrubber slide with play, step and speed
@@ -379,7 +405,7 @@ Both switch off by themselves when the computer asks for reduced motion.
 
 | What you see | What to do |
 | --- | --- |
-| Run says it can't start | That language isn't installed. Install it (Python, Java 11+, a C compiler, Rust, Go or Node) and restart ITSD. |
+| Run says it can't start, or the language shows as missing | That language isn't installed, or ITSD can't see it. Install it, then open **Settings > Languages** and press **Find** (or **Browse…** to its program). No restart needed. |
 | A picture is missing | The `assets/` folder isn't next to the `.itsd` file. Move it back. |
 | An effect is skipped, with a warning on its line | It isn't downloaded on this computer. Open **Vendor > React Bits…** and download it. The rest of the slide still shows. |
 | The effect menus are empty | Nothing is downloaded yet. Open **Vendor > React Bits…** first. |
@@ -525,6 +551,8 @@ underneath lists them in the order Next plays them; use ▲ ▼ to reorder and �
 ## I want to present a deck from my phone
 
 On Android, ITSD opens in **Phone Player** rather than the editor. Choose **Open a deck** and select a `.itsd` file or an `.itsdpak` package made on the desktop with **File > Export > ITSD package (.itsdpak)**. An `.itsdpak` file is a ZIP internally and carries the local media, fonts, and styles referenced by the deck; ordinary `.zip` bundles remain supported. Opened decks stay in the on-device library and remember the last slide.
+
+On desktop, **File > Open** also takes an `.itsdpak` (or `.zip`) package: it is unpacked into a folder beside the package, named like it, and the deck inside opens from there. Files already in that folder are never overwritten, so your edits are kept if you open the package again.
 
 Swipe left or right, tap the screen edges, or use the controls to move. The Player also includes a slide picker, speaker notes, branches, and fullscreen mode. JavaScript (`js` or `node`) blocks run on the phone; other code can replay output recorded on the desktop. Keep **Settings > Record runs** enabled and save before packaging when a deck needs offline code playback.
 

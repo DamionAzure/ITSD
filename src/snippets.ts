@@ -13,6 +13,8 @@ export const SNIPPETS: Record<Snippet, string> = {
   sound: '::: button "Play sound"\nplay ding\n:::\n\n',
   trace: partsLines(DEFAULT_RECT, parseTraceDef("from=example")).join("\n") + "\n\n", // separate parts, each placed
   traceOne: '::: trace from=example\n\n',
+  table: '::: table style=zebra\nName | Score | Rank\nAda | 91 | 1\nBo | 78 | 2\nCy | 85 | 3\n:::\n\n',
+  traceTable: '<!-- @ x=4 y=10 w=60 h=70 -->\n::: trace-table from=example style=zebra\n\n',
   macro: '::: macro reset_round\nput score 0\nput round 1\nplay chime\n:::\n\n',
   script: '::: script example\nadd("score", 5);\nawait wait(500);\nif (get("score") >= 10) play("ding");\n:::\n\n',
   on: '::: on key r\nput score 0\n:::\n\n',

@@ -3,13 +3,14 @@ import { parseDelay, parseKey, parseAct, type Act, parseInfo, scanInputs, type D
 import { parseImage } from "./images";
 import { readFlash } from "./flash";
 import { scanTraces } from "./traceBlock";
+import { TABLE_STYLES, scanTables, sortColumn, tableView } from "./tableDef";
 import { parseFx } from "./modules/fxEdit";
 import { findEffect } from "./modules/registry";
 import { fontRefs, isFontPath } from "./fonts";
+import { isRunnable } from "./langs";
 import { ID_LINE, ON_LINE, parseChain, ACTION_VERBS } from "./motion";
 
 export interface Problem { line: number; message: string; severity: "error" | "warning" } // line is 0-based
-const RUNNERS = new Set(["c", "cpp", "rust", "go", "python", "node", "java"]);
 
 export function lint(text: string, deck: Deck): Problem[] {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
@@ -38,6 +39,21 @@ export function lint(text: string, deck: Deck): Problem[] {
   deck.slides.forEach((s) => scanTraces(s.src).forEach(({ line, def }) => {
     if (def.from && !runIds.has(def.from)) out.push({ line: s.line + line, message: `No run block with id "${def.from}" in the deck (add id=${def.from} to the fence of the block that prints @itsd lines)`, severity: "warning" });
   }));
+  const STYLES = TABLE_STYLES as readonly string[];
+  deck.slides.forEach((s) => {
+    scanTables(s.src).forEach(({ line, def, closed }) => {
+      const at = s.line + line, a = def.attrs, v = tableView(def);
+      if (!closed) out.push({ line: at, message: "This ::: table never gets its closing ::: line", severity: "error" });
+      if (a.style && !STYLES.includes(a.style)) out.push({ line: at, message: `Unknown table look "${a.style}" (use ${TABLE_STYLES.join(", ")})`, severity: "warning" });
+      if (!def.rows.length) out.push({ line: at, message: "The table has no rows (write them like: Name | Score)", severity: "warning" });
+      if (a.sort && (sortColumn(def) < 0 || sortColumn(def) >= v.cols)) out.push({ line: at, message: `sort="${a.sort}" is not a column of this table (use a number from 1 to ${v.cols}, or a heading)`, severity: "warning" });
+      const ragged = def.rows.findIndex((r) => r.length !== v.cols);
+      if (ragged >= 0) out.push({ line: at, message: `Row ${ragged + 1} has ${def.rows[ragged].length} cells but the table has ${v.cols} columns; the short ones are padded`, severity: "warning" });
+    });
+    scanTraces(s.src).forEach(({ line, def }) => {
+      if (def.part === "table" && def.attrs.style && !STYLES.includes(def.attrs.style)) out.push({ line: s.line + line, message: `Unknown table look "${def.attrs.style}" (use ${TABLE_STYLES.join(", ")})`, severity: "warning" });
+    });
+  });
   const calcOk = (src: string, n: number, what = "calculate") => { try { parseExpr(src); } catch (e) { out.push({ line: n, message: `Can't ${what} "${src}": ${e instanceof ExprError ? e.message : e}`, severity: "error" }); } };
   // One action (and, for if / repeat / after / every, the action inside it). `ids` is the current slide's block ids (set per slide below).
   let ids = new Set<string>();
@@ -65,7 +81,7 @@ export function lint(text: string, deck: Deck): Problem[] {
         if (ids.has(attrs.id)) out.push({ line: n, message: `Duplicate block id "${attrs.id}" on this slide`, severity: "error" });
         ids.add(attrs.id);
       }
-      if (flags.has("run") && !RUNNERS.has(lang)) out.push({ line: n, message: `No runner for "${lang}"`, severity: "warning" });
+      if (flags.has("run") && !isRunnable(lang)) out.push({ line: n, message: `No runner for "${lang}"`, severity: "warning" });
     }
     let fenceCh: string | null = null;
     for (let n = s.line; n < end; n++) { const mi = lines[n].match(/^:::\s*(video|audio|slideshow)\b.*\bid=(\w+)/); if (mi) ids.add(mi[2]); }

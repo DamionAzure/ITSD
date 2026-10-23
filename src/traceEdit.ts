@@ -8,7 +8,7 @@ export interface Rect { x: number; y: number; w: number; h: number }
 /** Where a generated trace slide puts its parts (percent of the slide). */
 export const DEFAULT_RECT: Rect = { x: 4, y: 6, w: 92, h: 84 };
 /** Each part's place inside the trace's rectangle, as fractions of it: [x, y, w, h]. */
-const LAYOUT: Record<TracePart, [number, number, number, number]> = {
+const LAYOUT: Partial<Record<TracePart, [number, number, number, number]>> = {
   title: [0, 0, 0.62, 0.09], bars: [0, 0.11, 0.6, 0.56], counts: [0, 0.69, 0.6, 0.07], controls: [0, 0.78, 0.6, 0.1],
   code: [0.63, 0.11, 0.37, 0.45], ops: [0.63, 0.58, 0.37, 0.3],
 };
@@ -24,7 +24,8 @@ export function traceLine(part: TracePart | "", attrs: Record<string, string>): 
 export function partsLines(r: Rect, def: TraceDef): string[] {
   const out: string[] = [];
   for (const part of TRACE_PARTS) {
-    const [fx, fy, fw, fh] = LAYOUT[part];
+    const box = LAYOUT[part]; if (!box) continue; // the table is an extra part: add it with Insert > Trace table
+    const [fx, fy, fw, fh] = box;
     const at: Place = { x: round2(r.x + fx * r.w), y: round2(r.y + fy * r.h), w: round2(fw * r.w), h: round2(fh * r.h) };
     const a: Record<string, string> = { from: def.from };
     if (part === "title" && def.attrs.title !== undefined) a.title = def.attrs.title;
@@ -63,6 +64,11 @@ const BASE_FIELDS: Record<TracePart | "all", Field[]> = {
   bars: [{ k: "view", label: "Look", t: "select", d: "bars", opts: ["bars", "dots", "line", "numbers", "heat", "grid", "stack", "tree", "ring"] }, { k: "gap", label: "Gap", t: "num", d: "1.2" }, { k: "radius", label: "Rounding", t: "num", d: "0.4" }, { k: "labels", label: "Show values", t: "bool", d: "true" }, { k: "unsorted", label: "Unsorted bars", t: "color", d: "#323b6b" }, { k: "sorted", label: "Sorted bars", t: "color", d: "#3f7a63" },
     { k: "selected", label: "Selected bars", t: "color", d: "#f2b84b" }, { k: "selected-compare", label: "Selected, comparing", t: "color", d: "#f2b84b" },
     { k: "selected-swap", label: "Selected, swapping", t: "color", d: "#f2b84b" }, { k: "key", label: "Held key", t: "color", d: "#7fd6a4" }, { k: "size", label: "Text size ×", t: "num", d: "1" }],
+  table: [{ k: "style", label: "Table look", t: "select", d: "plain", opts: ["plain", "zebra", "grid", "lines", "bold", "card", "neon"] }, { k: "cols", label: "Columns", t: "text", d: "index value bar state", hint: "index value bar state was" },
+    { k: "heads", label: "Column headings", t: "text", hint: "Slot,Value,,Step" }, { k: "header", label: "Show headings", t: "bool", d: "true" },
+    { k: "unsorted", label: "Unsorted bars", t: "color", d: "#323b6b" }, { k: "sorted", label: "Sorted rows", t: "color", d: "#3f7a63" }, { k: "selected", label: "Selected rows", t: "color", d: "#f2b84b" },
+    { k: "head", label: "Heading colour", t: "color", d: "#1b2147" }, { k: "stripe", label: "Stripe colour", t: "color", d: "#171b38" }, { k: "rowline", label: "Row line colour", t: "color", d: "#2a3160" },
+    { k: "size", label: "Text size ×", t: "num", d: "1" }],
   code: [{ k: "size", label: "Text size ×", t: "num", d: "1" }],
   ops: [{ k: "size", label: "Text size ×", t: "num", d: "1" }],
   counts: [{ k: "size", label: "Text size ×", t: "num", d: "1" }],
@@ -93,6 +99,7 @@ const EXTRA: Partial<Record<TracePart | "all", Field[]>> = {
   bars: [...STEPS, { k: "index", label: "Show positions 0, 1, 2…", t: "bool", d: "false" }, { k: "pointers", label: "Pointer names (i, j) on lit values", t: "bool", d: "false" }, { k: "pointer", label: "Pointer names", t: "text", hint: "i j k l" },
     { k: "cols", label: "Columns (grid)", t: "num", hint: "auto" }, { k: "prefix", label: "Before each value", t: "text", hint: "$" }, { k: "suffix", label: "After each value", t: "text", hint: "ms" }, ...ANIM],
   counts: STEPS,
+  table: [...STEPS, { k: "sortedlabel", label: "Word for a sorted row", t: "text", hint: "sorted" }, { k: "prefix", label: "Before each value", t: "text", hint: "$" }, { k: "suffix", label: "After each value", t: "text", hint: "ms" }, ...ANIM],
   ops: [...STEPS, { k: "numbers", label: "Number the steps", t: "bool", d: "false" }, { k: "args", label: "Show positions after the name", t: "bool", d: "true" }],
   controls: [{ k: "back", label: "Back button text", t: "text", hint: "Back" }, { k: "play", label: "Play button text", t: "text", hint: "Play" }, { k: "pause", label: "Pause button text", t: "text", hint: "Pause" }, { k: "next", label: "Step button text", t: "text", hint: "Step" }],
   code: [{ k: "lines", label: "Line numbers", t: "bool", d: "true" }],

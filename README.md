@@ -115,8 +115,9 @@ configure `GITHUB_REPOSITORY=owner/repository`, and replace the updater endpoint
 placeholder in `src-tauri/tauri.conf.json` with the deployed `/api/latest` URL.
 Vercel serves the manifest; GitHub Releases still stores the signed installers.
 
-To run code you also need the language's tools on your PATH: `python`, `java` (11+), `node`, `go`, `rustc`, or a C/C++ compiler (`cc`, `c++`).
-Only the languages you actually use need to be installed.
+To run code you also need the language's tools installed: Python, Node, Deno (TypeScript), Rust, Go, Zig, Odin, Nim, a C/C++ compiler, .NET 10+ (C#), Java 11+, Kotlin, Swift, Dart, Ruby, Lua, PHP, Perl, R, Julia, Elixir, GHC (`runghc`), OCaml, Bash, PowerShell or SQLite.
+Only the languages you actually use need to be installed. ITSD looks on PATH; if a program is somewhere else, **Settings > Languages** can find it
+(PATH and the usual install folders) or you can point at it by hand with **Browse…**.
 
 ## A deck in ten seconds
 
@@ -202,7 +203,7 @@ src-tauri/src/lib.rs run-code backend: toolchain probes, compile/run, file acces
 example/demo.itsd    a tour deck          FORMAT.md       full file-format reference
 ```
 
-Add a language: add one line to `LANGS` in `src-tauri/src/lib.rs`.
+Add a language: one line in `LANGS` in `src-tauri/src/lib.rs` and one in `RUN_LANGS` in `src/langs.ts` (same id); colours come from `src/monaco.ts`.
 Build offline: `npm run vendor` copies the Rust dependencies into `src-tauri/vendor` (run it once while online).
 
 ## Notes

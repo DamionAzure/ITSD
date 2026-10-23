@@ -2,6 +2,7 @@
 //
 //   ::: trace-bars from=sort bar=#4466ff labels=false     the bars          ::: trace-code from=sort size=1.2   the run's code, current line lit
 //   ::: trace-ops from=sort                               the operation list  ::: trace-controls from=sort speed=2 sound="swap:pop"
+//   ::: trace-table from=sort style=zebra                 a table whose rows sort themselves as the run plays (the clone of `::: table`)
 //   ::: trace-counts from=sort                            running counts      ::: trace-title from=sort title="Sorting" steps=false
 //
 // and `::: trace from=sort` is the whole thing in one block (Visual view: right-click > Split into parts turns it into the separate ones).
@@ -13,7 +14,7 @@ import { addBranchLines } from "./slideOps";
 import { partsLines, DEFAULT_RECT } from "./traceEdit";
 import { formatMark } from "./layout";
 
-export const TRACE_PARTS = ["title", "bars", "code", "ops", "controls", "counts"] as const;
+export const TRACE_PARTS = ["title", "bars", "table", "code", "ops", "controls", "counts"] as const;
 export type TracePart = (typeof TRACE_PARTS)[number];
 export interface TraceDef { part: TracePart | ""; from: string; title: string; sound: string; vol: string; pitch: string; attrs: Record<string, string> }
 export function parseTraceDef(rest: string, part: TracePart | "" = ""): TraceDef {
@@ -22,7 +23,7 @@ export function parseTraceDef(rest: string, part: TracePart | "" = ""): TraceDef
   return { part, from: a.from ?? "", title: a.title ?? "Trace", sound: a.sound ?? "", vol: a.vol ?? "", pitch: a.pitch ?? "", attrs: a };
 }
 /** `::: trace ...` (whole) or `::: trace-bars ...` (a part). Group 1 = the part, 2 = the options. */
-export const TRACE_LINE = /^:::\s*trace(?:-(title|bars|code|ops|controls|counts))?(?:\s+(.*))?$/;
+export const TRACE_LINE = /^:::\s*trace(?:-(title|bars|table|code|ops|controls|counts))?(?:\s+(.*))?$/;
 export const traceOf = (m: RegExpMatchArray) => parseTraceDef(m[2] ?? "", (m[1] ?? "") as TracePart | "");
 
 /** Every trace block of a slide's source (whole or part; fence-aware, so manual pages can show examples). */

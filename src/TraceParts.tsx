@@ -1,9 +1,11 @@
-import { useContext, useEffect, useLayoutEffect, useRef, useSyncExternalStore, type CSSProperties } from "react";
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type CSSProperties } from "react";
 import { monaco, monacoLang, MONO } from "./monaco";
 import { DeckCtx, type TraceData } from "./ctx";
 import { SAMPLE_TRACE, parseTraceDef, type TraceDef } from "./traceBlock";
 import { fmtVal, opColor, opName } from "./traceStyle";
 import { lookStyle } from "./look";
+import { rowIds, positions } from "./traceRows";
+import { tableClass, tableVars } from "./TableBlock";
 const boxStyle = (a: Record<string, string>) => lookStyle(a, { size: false }); // a trace part's own `size` is its text multiplier (--ts), not a font size
 
 // The trace's pieces. Each is its own slide element (placed, sized, rotated and styled on its own) and they stay in step through a shared player.
@@ -154,6 +156,52 @@ export function OpsPart({ def, over }: P) {
   );
 }
 
+// The trace's table: the same element as `::: table` (same `style=` looks, colours and text size), but its rows are the values of the run, and every
+// row keeps its identity from step to step, so a swap makes two rows slide past each other and the table sorts itself as you watch.
+//   ::: trace-table from=sort style=zebra cols="index value bar state" heads="Slot,Value,,Step"
+const TCOLS: Record<string, { w: string; head: string }> = {
+  index: { w: "minmax(0, .55fr)", head: "#" }, value: { w: "minmax(0, 1fr)", head: "Value" }, bar: { w: "minmax(0, 2.4fr)", head: "" },
+  state: { w: "minmax(0, 1.2fr)", head: "Step" }, was: { w: "minmax(0, .65fr)", head: "Was" },
+};
+export function TablePart({ def, over }: P) {
+  const v = useTraceView(def, over), { f, frames, i } = v, A = def.attrs;
+  const ids = useMemo(() => rowIds(frames), [frames]);
+  const cur = ids[i] ?? [], at = positions(cur), n = cur.length;
+  const cols = (A.cols ?? "index value bar state").split(/[\s,]+/).filter((c) => TCOLS[c]);
+  const use = cols.length ? cols : ["index", "value", "bar", "state"];
+  const heads = (A.heads ?? "").split(",").map((s) => s.trim()), head = on(A.header);
+  const max = Math.max(1, ...frames.flatMap((x) => x.a.map(Math.abs)));
+  const body = useRef<HTMLDivElement>(null);
+  useEffect(() => { // keep the lit row in view inside the table's own box (scrollIntoView would nudge the slide)
+    const el = body.current?.querySelector<HTMLElement>(".dtr.hot"), box = body.current?.parentElement;
+    if (el && box && body.current) { const top = el.offsetTop, h = el.offsetHeight, head = box.querySelector<HTMLElement>(".dth")?.offsetHeight ?? 0; if (top < box.scrollTop) box.scrollTop = top; else if (top + h + head > box.scrollTop + box.clientHeight) box.scrollTop = top + h + head - box.clientHeight; }
+  }, [i]);
+  const state = (k: number) => (f.hl?.includes(k) ? "hot" : f.sorted !== undefined && k < f.sorted ? "sorted" : "");
+  const label = (k: number) => (f.hl?.includes(k) ? opName(A, f.op) : f.sorted !== undefined && k < f.sorted ? A.sortedlabel ?? "sorted" : "");
+  const gt = use.map((c) => TCOLS[c].w).join(" ");
+  const cls = hook("table", def, v).className + " " + tableClass(A, "dt-live");
+  return (
+    <div {...hook("table", def, v)} className={cls} style={{ ...vars(A, f.op), ...tableVars(A), "--gt": gt, "--n": n } as CSSProperties}>
+      {v.sample && <div className="sample">Sample. {def.from ? <>Run <code>{def.from}</code> to fill this.</> : "Run a block that prints @itsd lines to fill this."}</div>}
+      {head && <div className="dth" role="row">{use.map((c, k) => <span key={c} data-col={c}>{heads[k] !== undefined && heads[k] !== "" ? heads[k] : TCOLS[c].head}</span>)}</div>}
+      <div className="dtb" ref={body} role="rowgroup">
+        {cur.map((_, id) => {
+          const k = at[id], val = f.a[k];
+          return (
+            <div key={id} className={`dtr ${state(k)}`.trim()} role="row" data-id={id} data-pos={k} data-v={val} style={{ "--k": k } as CSSProperties}>
+              {use.map((c) => c === "index" ? <span key={c} data-col={c}>{k}</span>
+                : c === "value" ? <span key={c} data-col={c}>{fmtVal(A, val)}</span>
+                : c === "was" ? <span key={c} data-col={c}>{id}</span>
+                : c === "state" ? <span key={c} data-col={c}>{label(k)}</span>
+                : <span key={c} data-col={c} className="dtbar"><i style={{ width: `${Math.max(3, (Math.abs(val) / max) * 100)}%` }} /></span>)}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function CodePart({ def, over }: P) {
   const v = useTraceView(def, over), { f, trace, i } = v;
   const root = useRef<HTMLDivElement>(null), host = useRef<HTMLDivElement>(null);
@@ -186,7 +234,7 @@ export function CodePart({ def, over }: P) {
   return <div {...hook("code", def, v)} ref={root} style={boxStyle(def.attrs)}><div className="codepane" ref={host} /></div>;
 }
 
-export const PART: Record<string, (p: P) => React.ReactElement> = { title: TitlePart, bars: BarsPart, counts: CountsPart, controls: ControlsPart, ops: OpsPart, code: CodePart };
+export const PART: Record<string, (p: P) => React.ReactElement> = { title: TitlePart, bars: BarsPart, table: TablePart, counts: CountsPart, controls: ControlsPart, ops: OpsPart, code: CodePart };
 
 /** The parts in one block: the generated trace slide, or a plain `::: trace`. `onSplit` (editing only) turns it into separate elements. */
 export function TraceComposite({ def, over, onSplit, onMake }: { def: TraceDef; over?: Over; onSplit?: () => void; onMake?: () => void }) {

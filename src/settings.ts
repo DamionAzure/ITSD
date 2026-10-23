@@ -24,8 +24,10 @@ export interface Settings {
   player: "auto" | "on" | "off";
   /** Detected compiler availability, kept so code-run settings survive restarts. */
   compilers: Record<string, boolean>;
+  /** Where a language's program is, set by hand in Settings > Languages (language id -> program file or its folder). Empty = look on PATH. */
+  langPaths: Record<string, string>;
 }
-export const DEFAULTS: Settings = { traceSlide: "branch", traceButton: true, traceCss: "", traceCssOn: true, scripts: "ask", workspace: "", homeAtStart: true, presenter: false, recordRuns: true, player: "auto", compilers: {} };
+export const DEFAULTS: Settings = { traceSlide: "branch", traceButton: true, traceCss: "", traceCssOn: true, scripts: "ask", workspace: "", homeAtStart: true, presenter: false, recordRuns: true, player: "auto", compilers: {}, langPaths: {} };
 
 const KEY = "itsd.settings";
 const load = (): Settings => { try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") }; } catch { return { ...DEFAULTS }; } };

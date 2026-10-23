@@ -62,6 +62,8 @@ import { PLAYER, bundleBuf, bundleList, bundleText, bundleUrl, fileRefs, library
 import { splitRuns, joinRuns, loadRuns, runsSaved, allRuns, useRunsDirty } from "./runs";
 
 const filters = [{ name: "Interactive slide deck", extensions: ["itsd"] }];
+const openFilters = [{ name: "ITSD deck or package", extensions: ["itsd", "itsdpak", "zip"] }, ...filters]; // Open also takes a .itsdpak / .zip package
+const isPack = (p: string) => /\.(itsdpak|zip)$/i.test(p);
 const STARTER = "# New deck\n\nStart typing.\n\n---\n\n# Second slide\n";
 const isAbs = (p: string) => /^([\\/]|[A-Za-z]:[\\/])/.test(p);
 type Mode = "edit" | "visual";
@@ -107,6 +109,7 @@ export default function App() {
   const [mode, setMode] = useState<Mode>("edit");
   const [listed, setListed] = useState<string[]>([]); // image files in the deck's assets folder
   const [tools, setTools] = useState<Record<string, boolean>>({});
+  useEffect(() => { if (!PLAYER && Object.keys(st.compilers).length) setTools(st.compilers); }, [st.compilers]); // Settings > Languages re-scans after a path changes
   const [traces, setTraces] = useState<Record<string, TraceData & { src: number; name: string }>>({}); // key: "<slide id>:<run block id>"
   const lastTrace = useRef("");
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
@@ -260,11 +263,21 @@ export default function App() {
 
   const discardOk = () => !live.current.dirty || window.confirm("Discard unsaved changes?");
   const reset = () => { scriptOk.current = null; edits.current.clear(); inputs.clear(); setTraces({}); lastTrace.current = ""; setIdx(0); };
-  const load = async (p: string) => { const f = splitRuns(await invoke<string>("read_deck", { path: p })); loadRuns(f.runs); setText(f.text); setSaved(f.text); setPath(p); reset(); addRecent(p); };
+  /** A .itsdpak / .zip package is unpacked into a folder beside it (named like the package; files already there are kept, never overwritten), and the deck inside is what opens. */
+  const unpack = async (pack: string): Promise<string> => {
+    const o = openBytes(pack.replace(/^.*[\\/]/, ""), new Uint8Array(await invoke<ArrayBuffer>("read_bundle", { path: pack })));
+    if (!o.files.size) throw new Error("This file is not an ITSD package.");
+    const sep = pack.includes("\\") ? "\\" : "/", base = pack.replace(/\.(itsdpak|zip)$/i, "");
+    for (const [rel, bytes] of o.files) await invoke("write_bundle_file", { dir: base, rel, bytes });
+    const want = ((o.dir ? o.dir + "/" : "") + o.name + ".itsd").toLowerCase(), key = [...o.files.keys()].find((k) => k.toLowerCase() === want);
+    if (!key) throw new Error("This package has no .itsd deck in it.");
+    return base + sep + key.split("/").join(sep);
+  };
+  const load = async (p: string) => { if (isPack(p)) { try { p = await unpack(p); } catch (e) { window.alert(`Couldn't open the package: ${String(e)}`); return; } } const f = splitRuns(await invoke<string>("read_deck", { path: p })); loadRuns(f.runs); setText(f.text); setSaved(f.text); setPath(p); reset(); addRecent(p); };
   const openFromHome = async (p: string) => { if (!discardOk()) return; try { await load(p); setHome(false); if (isMobileViewport()) present(true, true); } catch (e) { window.alert(`Couldn't open ${p}: ${e}`); } };
-  const pickFromHome = async () => { if (!discardOk()) return; const p = await open({ filters }); if (typeof p === "string") { await load(p); setHome(false); if (isMobileViewport()) present(true, true); } };
+  const pickFromHome = async () => { if (!discardOk()) return; const p = await open({ filters: openFilters }); if (typeof p === "string") { await load(p); setHome(false); if (isMobileViewport()) present(true, true); } };
   const newDeck = () => { if (discardOk()) { setText(STARTER); setSaved(STARTER); setPath(null); reset(); } };
-  const openDeck = async () => { if (!discardOk()) return; const p = await open({ filters }); if (typeof p === "string") await load(p); };
+  const openDeck = async () => { if (!discardOk()) return; const p = await open({ filters: openFilters }); if (typeof p === "string") await load(p); };
   const saveDeck = async (as = false) => {
     let p = as ? null : live.current.path;
     if (!p) p = await save({ defaultPath: wsInfo.current ? `${wsInfo.current.workspace}/Decks/talk.itsd` : "talk.itsd", filters });
@@ -511,7 +524,7 @@ export default function App() {
         setTools({ node: true });
         return;
       }
-      const detected = await invoke<Record<string, boolean>>("check_toolchains").catch(() => ({}));
+      const detected = await invoke<Record<string, boolean>>("check_toolchains", { langPaths: settings().langPaths }).catch(() => ({}));
       setTools(detected);
       setSettings({ compilers: detected });
       if (!settings().homeAtStart) setHome(false);
@@ -612,7 +625,7 @@ export default function App() {
       { label: "Button", run: () => insert("button") }, { label: "Sound button", run: () => insert("sound") },
       { label: "Script", sub: [
         { label: "Event rule (on key / enter / change)", run: () => insert("on") }, { label: "Macro (reusable actions)", run: () => insert("macro") }, { label: "JavaScript block", run: () => insert("script") }] },
-      { label: "Trace (separate parts)", run: () => insert("trace") }, { label: "Trace (one block)", run: () => insert("traceOne") },
+      { label: "Table", run: () => insert("table") }, { label: "Trace (separate parts)", run: () => insert("trace") }, { label: "Trace (one block)", run: () => insert("traceOne") }, { label: "Trace table (sorts itself)", run: () => insert("traceTable") },
       { label: "Slideshow…", run: () => void addSlideshow() }, ...(live.current.mode !== "visual" ? [{ label: "Look (style the next block)", sub: PRESET_NAMES.map((n): Item => ({ label: n[0].toUpperCase() + n.slice(1), run: () => put(`<!-- @look ${n} -->\n`) })) } as Item] : []),
       { label: "Video…", run: () => void addMedia("video") }, { label: "Audio…", run: () => void addMedia("audio") }, { label: "Input box", run: () => insert("input") }, { label: "Speaker notes", run: () => insert("notes") }, { label: "Hidden source", run: () => insert("source") }, "-",
       { label: "Action (on Next)", run: () => put("<!-- @on next: rotate this 90 -> fade this 0.5 -->\n") },

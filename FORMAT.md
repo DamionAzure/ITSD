@@ -6,7 +6,9 @@ Plain UTF-8 Markdown (MIME `text/x-itsd`). Open it in any text editor.
 - **Slides** are separated by a line containing only `---` (ignored inside code fences).
 - **Runnable code**: add `run` after the language: ```` ```python run ````.
   Without `run`, a fence is a normal static code block.
-- **Languages**: `c`, `cpp`, `rust`, `go`, `python`, `node` (add more in `LANGS` in `src-tauri/src/lib.rs`).
+- **Languages**: `python`, `node`, `typescript` (Deno), `rust`, `go`, `zig`, `odin`, `nim`, `c`, `cpp`, `csharp` (.NET 10+), `java`, `kotlin`, `swift`, `dart`, `ruby`, `lua`, `php`, `perl`, `r`, `julia`, `elixir`, `haskell`, `ocaml`, `bash`, `powershell`, `sql` (SQLite). Short names work too (`py`, `js`, `ts`, `rs`, `c++`, `cs`, `rb`, `sh`, `ps1`, ...).
+  The language's program must be installed. ITSD looks on PATH; if it is somewhere else, set it by hand in **Settings > Languages**.
+  (Add a language: a line in `LANGS` in `src-tauri/src/lib.rs` and one in `RUN_LANGS` in `src/langs.ts`.)
 - Run output is never saved in the file; edits made to a block while presenting are not written back.
 
 ## Animation
@@ -175,7 +177,7 @@ text flow get placed when they are moved. One command is one Ctrl+Z. Dragging a 
 
 If a run prints lines of the form `@itsd {"op":"compare","a":[3,1,2],"hl":[0,1]}`, a generated slide with a scrubber,
 play/pause/step controls, speed selector and the list of operations appears right after the slide that ran it.
-Any language can print these lines. In Java, `Trace.step("compare", arr, i, j)` does it for you (the helper is attached automatically).
+Any language can print these lines. In Java, `Trace.step("compare", arr, i, j)` does it for you (the helper is attached automatically); in C#, `Trace.Step("compare", arr, i, j)` and `Trace.State(...)` do.
 Trace slides are not saved in the file; they are rebuilt each time you run.
 
 Trace slides also show a running count per operation name (everything except `start` and `done`), e.g. `compare 7  shift 4  insert 2`.
@@ -402,6 +404,7 @@ A trace is a set of separate elements that share one playback, so each one can b
 ::: trace-controls from=sort speed=2 speeds="1 2 4" slider=false sound="compare:tick swap:pop done:chime" vol=0.8 pitch=+-0.1
 ::: trace-code     from=sort size=1.2
 ::: trace-ops      from=sort size=1
+::: trace-table    from=sort style=zebra
 ```
 Each is one line, no closing `:::`, and a normal block: it flows with the text, or drag it in the Visual view (a dragged part gets a `<!-- @ x= y= w= h= -->` marker above it like any block).
 `from=` is the `id` of the run block whose `@itsd` lines feed it (left out = "the latest run"); parts with the same `from` play together: Step on the controls moves the bars,
@@ -416,6 +419,39 @@ the operation list, the counts, the title and the lit code line at once. Use onl
 - **Generated slide:** a run with no trace parts still adds a generated slide after the slide that ran it; its **Make editable** button gives the run block an `id` if it has none and
   inserts a slide made of separate parts. A run that has trace parts anywhere no longer gets a generated slide.
 - Insert > Trace (separate parts) adds all six, laid out; Insert > Trace (one block) adds the single block.
+
+## Table element and the trace table
+
+A table is a block of plain rows between two `:::` lines. Cells are split on `|` (or a tab, or commas when the row has no `|`); a `---|---` line is ignored, so a table pasted from Markdown works.
+The first row is the heading unless `header=false`. A cell can hold `**bold**`, `` `code` `` and `{{variables}}`.
+
+```
+::: table style=zebra sort=2 dir=desc index=true hl=2 caption="Scores"
+Name | Score | Note
+Ada  | 91    | **top**
+Bo   | 78    | steady
+Cy   | 85    | rising
+:::
+```
+- **`style=`** the look: `plain` (default), `zebra`, `grid`, `lines`, `bold`, `card`, `neon`. Colours: `head=` (heading row), `stripe=` (zebra rows), `rowline=` (lines), `hot=` (highlighted rows). `size=` scales the text (1 = a little smaller than the slide's body text, the size of a code block), `cellpad=` the cell padding, `fit=true` gives equal column widths.
+- **`sort=`** orders the rows: a column number counting from 1, or a heading name; `dir=asc|desc`. Columns where every cell is a number sort as numbers. The file keeps your own order (Inspector > Rows), so the table can be written in any order and still be shown sorted.
+- **`index=true`** adds a row-number column; **`hl=2,4`** highlights rows (numbers refer to the rows as written, heading excluded); **`align="left right center"`** sets each column; **`caption=`** adds a caption under the table.
+- It is a normal block: it flows with the text, or place it in the Visual view (`<!-- @ x= y= w= h= -->`), and any `<!-- @look ... -->` line above it applies. The Inspector has a Rows box and a field for each option above; Insert > Table adds one.
+- Lint warns about a missing closing `:::`, an unknown `style`, a `sort` that is not a column, and rows with a different number of cells.
+
+### `::: trace-table`: a table that sorts itself
+
+The trace has its own clone of the table, a trace part like `trace-bars`: same looks (`style=`, `head=`, `stripe=`, `size=`, any `@look` line), but its rows are the values of the run. Each row keeps its
+identity from step to step, so when the run swaps two values the two rows slide past each other: the table sorts itself as you press Step or Play.
+
+```
+::: trace-table from=sort style=zebra cols="index value bar state" heads="Slot,Value,,Step"
+```
+- **`cols=`** any of `index` (where the row is now), `value`, `bar` (a bar scaled to the value), `state` (the step it is in: compare, swap... or `sorted`) and `was` (the position it started in). Default: `index value bar state`.
+- **`heads=`** the column headings, comma separated, in the order of `cols` (an empty one keeps the default); `header=false` hides the heading row. `sortedlabel=` changes the word shown for a sorted row.
+- **Colours:** `unsorted` (bars), `sorted` (rows in the sorted region), `selected` / `selected-<op>` (the rows a step points at), `names=` and `colors=` per kind of step, `prefix=` / `suffix=` for values, and `anim=` / `ease=` for the slide speed, exactly like `trace-bars`.
+- Rows are matched between steps by value and nearest position, so equal values do not swap places for nothing; a step that overwrites values (merge sort) moves the nearest row.
+- It is not in the six parts Insert > Trace lays out; add it with **Insert > Trace table (sorts itself)**, or write the line. A table taller than its box scrolls inside itself and follows the lit row.
 
 ## Sound effects
 

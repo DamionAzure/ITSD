@@ -65,7 +65,7 @@ export function CodeBlock({ editKey, name, srcId, lang: lang0, code, tools, edit
     };
     try {
       if (live && local) await runJs(ran.text, (e) => ch.onmessage(e));
-      else if (live) await invoke("run_code", { lang: ran.lang, code: ran.text, onEvent: ch as Channel<RunEvent> });
+      else if (live) await invoke("run_code", { lang: cl, code: ran.text, onEvent: ch as Channel<RunEvent>, langPaths: settings().langPaths });
       else { // no compiler here: show what was recorded for this code and these inputs
         const r = findRun(cl, tpl, inputs);
         if (r) { add("recorded run", "ok"); for (const [k, t] of r.ev) handle({ kind: k === "e" ? "Stderr" : "Stdout", data: t }); handle({ kind: "Exit", data: r.x }); }
@@ -100,7 +100,7 @@ export function CodeBlock({ editKey, name, srcId, lang: lang0, code, tools, edit
         if (e.kind === "Stdout") ev.push(["o", e.data.slice(0, MAX_LINE)]); else if (e.kind === "Stderr") ev.push(["e", e.data.slice(0, MAX_LINE)]);
         else if (e.kind === "Exit") resolve({ ev, x: e.data });
       };
-      invoke("run_code", { lang: lang.current, code: text, onEvent: ch }).then(() => setTimeout(() => reject(new Error("the run gave no result")), 3000), reject);
+      invoke("run_code", { lang: cl, code: text, onEvent: ch, langPaths: settings().langPaths }).then(() => setTimeout(() => reject(new Error("the run gave no result")), 3000), reject);
     });
     stop.current = false; going.current = true; setBusy(true); setOut([]); let done = 0, batch: RunRec[] = [], failed = "";
     setRec({ done, total });
@@ -179,7 +179,7 @@ export function CodeBlock({ editKey, name, srcId, lang: lang0, code, tools, edit
         <button title="Tidy this code (Shift+Alt+F)" onClick={format}>Format</button>
         {available && !PLAYER && settings().recordRuns && /\{\{/.test(latest.current) && <button className={rec ? "recording" : ""} onClick={() => void recordOrders()} title="Run this code for every order of 2 to N numbers in the input (up to 6), so a phone or a computer without the compiler can replay it for any numbers in those orders. Click again while recording to stop.">{rec ? `Stop (${rec.done}/${rec.total})` : "Record all orders"}</button>}
         <button className="go" disabled={(busy && !rec) || (rec !== null) || !(available || replay || PLAYER)} onClick={run}
-          title={available ? "Run (Ctrl/Cmd+Enter)" : replay ? `No ${label} here: replay the recorded run` : `No ${label} toolchain found on this machine, and nothing recorded`}>{available || (PLAYER && !replay) ? "Run" : "Replay"}</button>
+          title={available ? "Run (Ctrl/Cmd+Enter)" : replay ? `No ${label} here: replay the recorded run` : `No ${label} found on this machine (set where it is in Settings > Languages), and nothing recorded`}>{available || (PLAYER && !replay) ? "Run" : "Replay"}</button>
       </div>
       <div ref={host} className="mon" />
       <pre className="out">{out.map((o, i) => <span key={i} className={o.c}>{o.t + "\n"}</span>)}</pre>

@@ -315,3 +315,10 @@ Added: `player.ts`, `Player.tsx`, `jsRun.ts`; `PLAYER` branch in App.tsx (own re
 - **Bug found and fixed in the 0.5.0 core:** in Phone Player mode `App.tsx` returned `<Player>` outside `<DeckCtx.Provider>`, so any slide crashed with "Cannot read properties of null (reading 'subscribe')" and the screen stayed blank. It is wrapped now. Verified by opening a real `.itsdpak` (deck, manifest, three pictures) with `?player=1` at phone size: looks, the slideshow and its pictures all render.
 
 - **Windows note:** the component is `SlideshowView.tsx`, not `Slideshow.tsx`: on a case-insensitive file system that name collides with `slideshow.ts`, and the import resolved to the wrong file ("No matching export ... Slideshow").
+
+## Added later: Table element and trace table
+- `::: table` (`src/tableDef.ts`, `src/TableBlock.tsx`, `src/TableFields.tsx`): rows as plain text split on `|`, seven looks (`style=`), `sort=` / `dir=`, `index`, `hl`, `align`, `caption`. A normal block in `toBlocks` (kind `table`), placed, looked and arranged like any other; the Inspector has a Rows box and every option.
+- `::: trace-table` (`TablePart` in `src/TraceParts.tsx`, identity tracking in `src/traceRows.ts`): the same look classes (`.dt`) inside the trace. Rows are keyed by identity, positioned with `--k`, and slide with a CSS transform when the run swaps values. Not one of the six parts Insert > Trace lays out.
+- Lint: unclosed table, unknown look, bad `sort`, ragged rows. Docs: FORMAT.md, MANUAL.md, wiki, RELEASE_NOTES.md, `example/tables.itsd`.
+- Checked: `tsc --noEmit`, `vite build`, and in headless Chromium with a mocked Tauri backend: the static table sorts and numbers its rows; the trace table's rows swap places step by step (final y positions match the final order); the Visual Inspector shows the table's rows and options. Row matching was also unit-tested on duplicate values.
+- Not checked: the real Tauri app, a real run feeding the trace table (the sample trace was used), and merge-sort style traces that overwrite values (matched by nearest slot, only unit-tested).

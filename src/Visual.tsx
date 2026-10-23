@@ -21,6 +21,8 @@ import { LookPanel, ShowFields } from "./LookFields";
 import { PRESET_NAMES, lookIn, patchLook, setLookPreset } from "./look";
 import { newShow, patchShow } from "./slideshow";
 import { patchTraceLine, splitTraceBlock } from "./traceEdit";
+import { TableFields } from "./TableFields";
+import { patchTable } from "./tableDef";
 import { MODULES, effectGroups, fromModule } from "./modules/registry";
 
 type Corner = "nw" | "ne" | "sw" | "se" | "n" | "s" | "e" | "w"; // a picture can be pulled from any corner or side
@@ -270,7 +272,7 @@ export function VisualView(p: Props) {
       edit((t) => patchFlash(t, L.current.slide.id, b.fl!, { set }));
       return;
     }
-    const sized = blk.kind === "html" || blk.kind === "run" || blk.kind === "fx" || blk.kind === "wrap" || blk.kind === "trace" || blk.kind === "media" || blk.kind === "show";
+    const sized = blk.kind === "html" || blk.kind === "run" || blk.kind === "fx" || blk.kind === "wrap" || blk.kind === "trace" || blk.kind === "media" || blk.kind === "show" || blk.kind === "table";
     const w = resized ? r.w : blk.at?.w ?? (sized ? Math.min(100 - Math.max(0, r.x), r.w + 1.5) : undefined); // keep the wrapping it had in the flow
     const h = vert ? r.h : blk.at?.h; // a height is only written once it has been pulled; otherwise the block stays as tall as its content
     edit((t) => placeBlock(t, L.current.slide.id, blk, { ...blk.at, x: r.x, y: r.y, w, h })); // keep rot, z and fit that were already there
@@ -378,7 +380,7 @@ export function VisualView(p: Props) {
   const restack = (n: number, to: number) => { edit((t) => reorderImage(t, id, n, to)); setSel(Math.max(0, Math.min(to, defs.length - 1))); };
   // ---- layering (z), rotation, stretch-to-box, and multi-select align / distribute ----
   const rotShown = (key: string, rot: number) => (liveRot?.key === key ? liveRot.rot : rot);
-  const sizedKind = (k: string) => k === "html" || k === "run" || k === "fx" || k === "wrap" || k === "trace" || k === "media" || k === "show";
+  const sizedKind = (k: string) => k === "html" || k === "run" || k === "fx" || k === "wrap" || k === "trace" || k === "media" || k === "show" || k === "table";
   const layerList = () => [
     ...blks.flatMap((b, i) => (b.at && b.kind !== "flash" ? [{ key: `b${i}`, z: b.at.z ?? 0 }] : [])),
     ...defs.map((d, n) => ({ key: `p${n}`, z: d.z ?? 10 })), // a picture with no z sits in front of text (z 10), as it always did
@@ -522,10 +524,10 @@ export function VisualView(p: Props) {
     edit((t) => blk.kind === "flash" ? removeFlash(t, id, L.current.boxes.find((b) => b.i === i)!.fl!) : deleteBlock(t, id, blk));
     setBsel(null);
   };
-  const KIND: Record<string, string> = { html: "Text", run: "Code block", btn: "Button", input: "Input box", flash: "Flash region", fx: "Effect", wrap: "Effect box", trace: "Trace", media: "Video / audio", show: "Slideshow" };
+  const KIND: Record<string, string> = { html: "Text", run: "Code block", btn: "Button", input: "Input box", flash: "Flash region", fx: "Effect", wrap: "Effect box", trace: "Trace", media: "Video / audio", show: "Slideshow", table: "Table" };
   const blockMenu = (b: Box): MenuItem[] => {
     const blk = blks[b.i]; if (!blk) return [];
-    const sized = blk.kind === "html" || blk.kind === "run" || blk.kind === "fx" || blk.kind === "wrap" || blk.kind === "trace" || blk.kind === "media" || blk.kind === "show";
+    const sized = blk.kind === "html" || blk.kind === "run" || blk.kind === "fx" || blk.kind === "wrap" || blk.kind === "trace" || blk.kind === "media" || blk.kind === "show" || blk.kind === "table";
     const put = (patch: Partial<Rect>) => commitBlock(b, { ...b, ...patch }, patch.w !== undefined || patch.h !== undefined, patch.h !== undefined);
     return [
       act("Return to text flow", () => edit((t) => unplaceBlock(t, id, blk)), { disabled: !blk.at }),
@@ -698,7 +700,7 @@ export function VisualView(p: Props) {
             <div className="slide"><SlideView slide={slideNow} slideKey={id} reveal={false} tools={p.tools} edits={p.edits} images={shown} plain align={p.deck.meta.align} /></div>
             <div className="ovl">
               {boxes.map((b) => {
-                const r = dragBlk?.i === b.i ? dragBlk.r : b, on = bsel === b.i, sized = b.kind === "html" || b.kind === "run" || b.kind === "flash" || b.kind === "fx" || b.kind === "wrap" || b.kind === "trace" || b.kind === "media" || b.kind === "show";
+                const r = dragBlk?.i === b.i ? dragBlk.r : b, on = bsel === b.i, sized = b.kind === "html" || b.kind === "run" || b.kind === "flash" || b.kind === "fx" || b.kind === "wrap" || b.kind === "trace" || b.kind === "media" || b.kind === "show" || b.kind === "table";
                 return (
                   <div key={`b${b.i}`} data-bbox={b.i} {...(b.fl !== undefined ? { "data-fl": b.fl } : {})} className={"box dom" + (on || multi.includes(`b${b.i}`) ? " sel" : "") + (multi.includes(`b${b.i}`) ? " multi" : "") + (b.placed || b.fl !== undefined && flashes[b.fl]?.spec.x !== undefined ? " placed" : "")}
                     title={b.fl !== undefined ? "Flash region: drag to place it, right-click for options" : "Drag to place anywhere; Shift+click to select several; right-click for options"}
@@ -758,7 +760,7 @@ export function VisualView(p: Props) {
           const b = boxes.find((x) => x.i === bsel)!, blk = blks[b.i];
           const put = (patch: Partial<Rect>) => commitBlock(b, { ...b, ...patch }, patch.w !== undefined || patch.h !== undefined, patch.h !== undefined);
           const placed = blk?.at || (b.fl !== undefined && flashes[b.fl]?.spec.x !== undefined);
-          const sized = b.kind === "html" || b.kind === "run" || b.kind === "flash" || b.kind === "fx" || b.kind === "wrap" || b.kind === "trace" || b.kind === "media" || b.kind === "show";
+          const sized = b.kind === "html" || b.kind === "run" || b.kind === "flash" || b.kind === "fx" || b.kind === "wrap" || b.kind === "trace" || b.kind === "media" || b.kind === "show" || b.kind === "table";
           return (
             <section>
               <div className="ptitle">{(blk?.kind === "trace" && blk.def.part ? `Trace ${blk.def.part}` : KIND[b.kind] ?? "Block").toUpperCase()}</div>
@@ -772,9 +774,10 @@ export function VisualView(p: Props) {
               {sized && b.fl === undefined && <label className="chk"><input type="checkbox" checked={blk?.at?.fit === "scale"} onChange={(e) => setStretch(b.i, e.target.checked)} /> Stretch text to the box (X and Y)</label>}
               {placed && b.fl === undefined && <div className="btns arr"><button title="Bring to front" disabled={!canStack(`b${b.i}`, "up")} onClick={() => stack(`b${b.i}`, "front")}>⤒ Front</button><button title="Bring forward" disabled={!canStack(`b${b.i}`, "up")} onClick={() => stack(`b${b.i}`, "forward")}>↑</button><button title="Send backward" disabled={!canStack(`b${b.i}`, "down")} onClick={() => stack(`b${b.i}`, "backward")}>↓</button><button title="Send to back" disabled={!canStack(`b${b.i}`, "down")} onClick={() => stack(`b${b.i}`, "back")}>⤓ Back</button></div>}
               {blk?.kind === "trace" && <TraceFields def={blk.def} runs={runIds(p.deck.slides)} onPatch={(patch) => edit((t) => patchTraceLine(t, id, blk.line, patch))} onSplit={!blk.def.part ? () => edit((t) => splitTraceBlock(t, id, blk)) : undefined} />}
+              {blk?.kind === "table" && <TableFields def={blk.def} onPatch={(patch) => edit((t) => patchTable(t, id, blk.line, patch))} onRows={(rows) => edit((t) => patchTable(t, id, blk.line, {}, rows))} />}
               {blk?.kind === "show" && <ShowFields def={blk.def} onPatch={(patch) => edit((t) => patchShow(t, id, blk.line, patch))} onPictures={(srcs) => edit((t) => patchShow(t, id, blk.line, {}, srcs))}
                 onAdd={async () => { const refs = await p.pickImages(); if (refs.length) edit((t) => patchShow(t, id, blk.line, {}, [...blk.def.srcs, ...refs])); }} />}
-              {blk && b.fl === undefined && blk.kind !== "trace" && <LookPanel kind={blk.kind} look={lookIn(L.current.slide.src, blk.line).attrs} onPatch={(patch) => edit((t) => patchLook(t, id, blk.line, patch))} onPreset={(n) => edit((t) => setLookPreset(t, id, blk.line, n))} />}
+              {blk && b.fl === undefined && (blk.kind !== "trace" || blk.def.part === "table") && <LookPanel kind={blk.kind} look={lookIn(L.current.slide.src, blk.line).attrs} onPatch={(patch) => edit((t) => patchLook(t, id, blk.line, patch))} onPreset={(n) => edit((t) => setLookPreset(t, id, blk.line, n))} />}
               <p className="hint">{placed ? "Placed on the slide." : "In the text flow. Drag it, or type a position, to place it."}</p>
               <div className="btns">
                 {blk?.at?.h !== undefined && <button onClick={() => edit((t) => placeBlock(t, id, blk, { x: blk.at!.x, y: blk.at!.y, w: blk.at!.w }))}>Auto height</button>}

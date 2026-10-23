@@ -4,7 +4,11 @@ import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 
 export const ITSD_LANG = "itsd";
 const VERBS = "anim|run|show|hide|start|stop|goto|play|put|set|add|sub|after|every|cancel|wait|if|then|else|repeat|toggle|random|call|script|reset|branch|proceed|back";
-const FENCE_LANGS: Record<string, string> = { python: "python", py: "python", js: "javascript", javascript: "javascript", node: "javascript", rust: "rust", rs: "rust", go: "go", cpp: "cpp", "c++": "cpp", c: "cpp", java: "java" };
+import { RUN_LANGS } from "./langs";
+// Every run language's fence names -> the Monaco language that colours it (longest names first, so `c++` is not read as `c`).
+const FENCES: [string, string][] = RUN_LANGS.filter((l) => l.monaco !== "plaintext").flatMap((l) => [l.id, ...l.also].map((n) => [n, l.monaco] as [string, string])).sort((a, b) => b[0].length - a[0].length);
+const MONACO_FENCES = [...new Set(FENCES.map(([, m]) => m))];
+const esc = (n: string) => n.replace(/[+#]/g, "\\$&");
 
 let done = false;
 export function registerItsd() {
@@ -74,19 +78,14 @@ export function registerItsd() {
     [/<!--/, { token: "comment.itsd", next: "@comment" }],
     [/^:::\s*script\b/, { token: "block.itsd", next: "@scriptHead" }],
     [/^:::\s*[A-Za-z][\w-]*/, { token: "block.itsd", next: "@blockHead" }],
-    [/^\s*```(?:python|py)\b.*$/, { token: "fence.itsd", next: "@code_python", nextEmbedded: "python" }],
-    [/^\s*```(?:js|javascript|node)\b.*$/, { token: "fence.itsd", next: "@code_javascript", nextEmbedded: "javascript" }],
-    [/^\s*```(?:rust|rs)\b.*$/, { token: "fence.itsd", next: "@code_rust", nextEmbedded: "rust" }],
-    [/^\s*```go\b.*$/, { token: "fence.itsd", next: "@code_go", nextEmbedded: "go" }],
-    [/^\s*```(?:cpp|c\+\+|c)\b.*$/, { token: "fence.itsd", next: "@code_cpp", nextEmbedded: "cpp" }],
-    [/^\s*```java\b.*$/, { token: "fence.itsd", next: "@code_java", nextEmbedded: "java" }],
+    ...MONACO_FENCES.map((m) => [new RegExp("^\\s*```(?:" + FENCES.filter(([, x]) => x === m).map(([n]) => esc(n)).join("|") + ")(?![\\w+#])" + ".*$"), { token: "fence.itsd", next: "@code_" + m, nextEmbedded: m }] as [RegExp, monaco.languages.IMonarchLanguageAction]),
     [/^\s*```.*$/, { token: "fence.itsd", next: "@code_plain" }],
     { include: "inline" },
   ];
   const t = tok.tokenizer as Record<string, unknown[]>;
   t.blockHead = [[/$/, { token: "", switchTo: "@block" }], { include: "bodyTokens" }, [/[^\s]+/, "blockname.itsd"]];
   t.scriptHead = [[/$/, { token: "", switchTo: "@script", nextEmbedded: "javascript" }], { include: "bodyTokens" }, [/[^\s]+/, "blockname.itsd"]];
-  for (const lang of ["python", "javascript", "rust", "go", "cpp", "java"])
+  for (const lang of MONACO_FENCES)
     t["code_" + lang] = [
       [/(?=\s*```\s*$)/, { token: "@rematch", switchTo: "@fenceEnd", nextEmbedded: "@pop" }],
       [/./, ""],

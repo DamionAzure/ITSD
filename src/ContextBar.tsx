@@ -1,6 +1,6 @@
 import type { Slide } from "./itsd";
 
-export type Snippet = "slide" | "code" | "button" | "input" | "source" | "flash" | "sound" | "trace" | "traceOne" | "macro" | "script" | "on" | "notes";
+export type Snippet = "slide" | "code" | "button" | "input" | "source" | "flash" | "sound" | "trace" | "traceOne" | "table" | "traceTable" | "macro" | "script" | "on" | "notes";
 import { parseTransition } from "./transitions";
 interface Props { onPanel: (k: "transitions" | "animations") => void; deckTransition?: string; slide: Slide; sounds: string[]; onPreview: (name: string) => void; onOpt: (key: string, value: string) => void; onInsert: (k: Snippet) => void; visual?: boolean; onUndo?: () => void; onRedo?: () => void }
 
@@ -37,6 +37,7 @@ export function ContextBar({ onPanel, deckTransition, slide, sounds, onPreview, 
         <button onClick={() => onInsert("button")}>+ Button</button>
         <button onClick={() => onInsert("input")}>+ Input</button>
         <button title="A trace of a run block, as an element on this slide" onClick={() => onInsert("trace")}>+ Trace</button>
+        <button title="A styled table you write as plain rows" onClick={() => onInsert("table")}>+ Table</button>
         <button onClick={() => onInsert("source")}>+ Source</button>
         <button onClick={() => onInsert("notes")}>+ Speaker notes</button>
         <button title="Flash region that starts when you press Next" onClick={() => onInsert("flash")}>+ Flash</button>

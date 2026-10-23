@@ -1,0 +1,55 @@
+---
+title: Tables
+---
+# A table
+
+Rows are plain text. Cells are split with `|`.
+
+::: table style=zebra sort=2 dir=desc index=true caption="Sorted by score, written in any order"
+Language | Score | Note
+Go | 78 | simple
+Rust | 91 | **fast**
+Python | 85 | `readable`
+:::
+
+---
+# Seven looks
+
+<!-- @ x=4 y=22 w=44 -->
+::: table style=grid
+Look | Use
+grid | lines on every cell
+lines | clean, minimal
+:::
+
+<!-- @ x=52 y=22 w=44 -->
+::: table style=neon
+Look | Use
+neon | glowing on dark
+card | rounded and shadowed
+:::
+
+---
+# A table that sorts itself
+
+```python run id=sort
+import json
+a = [5, 2, 4, 1, 3]
+def show(op, hl=None, **k):
+    print("@itsd " + json.dumps({"op": op, "a": a, **({"hl": hl} if hl else {}), **k}))
+show("start")
+for end in range(len(a) - 1, 0, -1):
+    for i in range(end):
+        show("compare", [i, i + 1])
+        if a[i] > a[i + 1]:
+            a[i], a[i + 1] = a[i + 1], a[i]
+            show("swap", [i, i + 1])
+    show("pass", sorted=len(a) - end)
+show("done", sorted=len(a))
+```
+
+<!-- @ x=4 y=52 w=56 h=40 -->
+::: trace-table from=sort style=zebra heads="Slot,Value,,Step"
+
+<!-- @ x=64 y=52 w=32 h=8 -->
+::: trace-controls from=sort speed=2

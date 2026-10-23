@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSettings, setSettings, resetSettings, type Settings } from "./settings";
 import type { SoundStore } from "./sound";
 import { open } from "@tauri-apps/plugin-dialog";
+import { LanguageSettings } from "./LanguageSettings";
 
 /** The Settings window (File > Settings, Ctrl+,). Every change applies at once. */
 export function SettingsDialog({ sfx, onClose, pickFolder, pickCss, cssNote, onReloadCss }: {
@@ -56,6 +57,8 @@ export function SettingsDialog({ sfx, onClose, pickFolder, pickCss, cssNote, onR
           <div className="srow"><label>Use it</label>
             <input type="checkbox" checked={s.traceCssOn} onChange={(e) => setSettings({ traceCssOn: e.target.checked })} />
             <span className={"sval" + (cssNote.startsWith("Couldn't") ? " bad" : "")}>{cssNote || "applies to every deck; a deck's own  style: file comes after it. See example/exampletrace.css"}</span></div>
+
+          <LanguageSettings />
 
           <h3>Scripts</h3>
           <div className="srow"><label>::: script blocks</label>

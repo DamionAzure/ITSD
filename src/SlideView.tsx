@@ -24,6 +24,8 @@ import { TRACE_LINE, traceOf, type TraceDef } from "./traceBlock";
 import { parseFx, readWrap, splitParts, type FxDef } from "./modules/fxEdit";
 import { lookClass, lookStyle, parseLook, type LookAttrs } from "./look";
 import { Slideshow } from "./SlideshowView";
+import { TableBlock } from "./TableBlock";
+import { readTable, type TableDef } from "./tableDef";
 import { SHOW_LINE, parseShow, type ShowDef } from "./slideshow";
 
 // `line`/`end` locate the block in the slide's source; `at` + `marker` are set when the author dragged it out of the text flow.
@@ -37,6 +39,7 @@ export type Block = Meta & (
   | { kind: "img"; def: ImageDef }
   | { kind: "flash"; spec: FlashSpec }
   | { kind: "trace"; def: TraceDef }
+  | { kind: "table"; def: TableDef }
   | { kind: "media"; def: MediaDef }
   | { kind: "show"; def: ShowDef }
   | { kind: "fx"; fx: FxDef }
@@ -44,7 +47,7 @@ export type Block = Meta & (
 type Raw = Block extends infer B ? (B extends Meta ? Omit<B, keyof Meta> : never) : never;
 
 const extLang = (ref: string) =>
-  ({ java: "java", py: "python", c: "c", cpp: "cpp", rs: "rust", go: "go", js: "node" } as Record<string, string>)[ref.split(".").pop() ?? ""] ?? "text";
+  ({ java: "java", py: "python", c: "c", cpp: "cpp", rs: "rust", go: "go", js: "node", mjs: "node", ts: "typescript", zig: "zig", odin: "odin", nim: "nim", cs: "csharp", kt: "kotlin", kts: "kotlin", swift: "swift", dart: "dart", rb: "ruby", lua: "lua", php: "php", pl: "perl", r: "r", jl: "julia", ex: "elixir", exs: "elixir", hs: "haskell", ml: "ocaml", sh: "bash", ps1: "powershell", sql: "sql" } as Record<string, string>)[(ref.split(".").pop() ?? "").toLowerCase()] ?? "text";
 
 function markdownBlocks(md: string, start: number): Block[] {
   const toks = marked.lexer(md) as any[];
@@ -111,6 +114,8 @@ export function toBlocks(src: string): Block[] {
     if (mdef) { flush(); push({ kind: "media", def: mdef }, i, i); continue; }
     const shm = !fence && !f ? lines[i].match(SHOW_LINE) : null, shdef = shm ? parseShow(shm[1]) : null;
     if (shdef) { flush(); push({ kind: "show", def: shdef }, i, i); continue; }
+    const tbl = !fence && !f ? readTable(lines, i) : null; // `::: table` ... `:::`: rows as plain text
+    if (tbl) { flush(); push({ kind: "table", def: tbl.def }, i, tbl.close); i = tbl.close; continue; }
     const trc = !fence && !f ? lines[i].match(TRACE_LINE) : null;
     if (trc) { flush(); push({ kind: "trace", def: traceOf(trc) }, i, i); continue; }
     if (!fence && /^:::\s*(?:when|after|every|on|macro|script|key)\s+\S/.test(lines[i])) { flush(); while (i + 1 < lines.length && !/^:::\s*$/.test(lines[i + 1])) i++; i++; continue; } // a rule or timer draws nothing; scanWhen / scanTimers read it
@@ -376,6 +381,7 @@ export function SlideView({ slide, slideKey, reveal, tools, edits, images, plain
     if (b.kind === "input") { const d = b.def; return <div className={cls("inp")} style={place} key={i} {...tag}><InputBox def={d} onRun={d.run ? () => { reg.get(d.run!)?.run(); } : undefined} /></div>; }
     if (b.kind === "media") { const d = b.def; return <div className={cls("med")} style={place} key={i} {...tag}>{sc(<MediaBlock def={d} />)}</div>; }
     if (b.kind === "show") return <div className={cls("shw")} style={place} key={i} {...tag}>{sc(<Slideshow def={b.def} />)}</div>;
+    if (b.kind === "table") return <div className={cls("tbl")} style={place} key={i} {...tag}>{sc(<TableBlock def={b.def} />)}</div>;
     if (b.kind === "trace") {
       const d = b.def, Part = d.part ? PART[d.part] : null; // a part is one element; a plain `trace` is all of them in one box
       return <div className={cls("trc" + (d.part ? ` tpart-${d.part}` : ""))} style={place} key={i} {...tag}>{sc(Part ? <Part def={d} /> : <TraceComposite def={d} onSplit={() => api.splitTrace(slide.id, { line: b.line, marker: b.marker, at: b.at })} />)}</div>;
@@ -445,6 +451,7 @@ export const Thumb = memo(function Thumb({ src, align }: { src: string; align?: 
       : b.kind === "input" ? <div className={cls("inp")} style={style} key={i}><label className="ibox"><span>{b.def.label}</span><div><input readOnly value={b.def.def} /></div></label></div>
       : b.kind === "flash" ? <div className={cls()} key={i}><div className="flash framed" style={flashBox(b.spec)} /></div>
       : b.kind === "media" ? <div className={cls("med")} style={style} key={i}><div className="media thumbmedia">{b.def.kind === "video" ? "▶ " : "♪ "}{b.def.src.split(/[\\/]/).pop()}</div></div>
+      : b.kind === "table" ? <div className={cls("tbl")} style={style} key={i}><TableBlock def={b.def} /></div>
       : b.kind === "trace" ? <div className={cls("trc")} style={style} key={i}><div className="trace-box thumbtrace">{b.def.part ? `trace ${b.def.part}` : b.def.title}</div></div>
       : b.kind === "fx" ? <div className={cls()} style={style} key={i}>{b.fx.attrs.text}</div>
       : b.kind === "wrap" ? <div className={cls()} style={style} key={i} dangerouslySetInnerHTML={{ __html: splitParts(b.md).map((p) => marked.parse(p) as string).join("") }} />
